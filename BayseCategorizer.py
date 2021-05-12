@@ -1,4 +1,5 @@
-import os from sys
+
+
 class BayesCategorizer:
 
 
@@ -23,8 +24,11 @@ class BayesCategorizer:
         self.wordNumbers = dict()
         self.wordPairs = []
 
+    def build_categorizer(self, directory):
+
 
     def test_categorizer(self, directory):
+        import os
         if not os.path.isdir(directory):
             raise RuntimeError(directory + " is not a directory")
         cat_num = 0
@@ -78,3 +82,5 @@ class BayesCategorizer:
            if os.path.isfile(file):
               files.append(name)
         return files
+
+    def make_categorizer(self):
