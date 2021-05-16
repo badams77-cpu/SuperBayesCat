@@ -64,3 +64,6 @@ class TextParser:
                         continue
                 else:
                     mode = 0
+
+    def get_word_count(self):
+        return self.word_count;
