@@ -2,14 +2,6 @@
 
 class BayesCategorizer:
 
-
-
-    # Constants
-    scoreForTitle=5.0
-    informationGainedThresholdWords = 0.1
-    percentOfDocumentForStopListWords = 60
-    superBayesAmount = 0.0
-
     # static data
     stopList = {}
 
@@ -28,7 +20,7 @@ class BayesCategorizer:
 
     def build_categorizer(self, directory):
         import os
-        import ParsedInputSources
+        from ParsedInputSources import ParsedInputSources
         if not os.path.isdir(directory):
             raise RuntimeError(directory + " is not a directory")
         cat_num = 0
@@ -38,11 +30,11 @@ class BayesCategorizer:
             self.categoryNumbers[cat] = cat_num
             cat_num += 1
             parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
-        ndocs = self.ake_categorizer( parsed_category_sources);
+        ndocs = self.make_categorizer( parsed_category_sources);
 
     def test_categorizer(self, directory):
         import os
-        import ParsedInputSources
+        from ParsedInputSources import ParsedInputSources
         if not os.path.isdir(directory):
             raise RuntimeError(directory + " is not a directory")
 
@@ -110,13 +102,14 @@ class BayesCategorizer:
         cat_count = []
         cat_total = []
         cat_word_count = []
+        cat_document_count = []
         average_word_factor = 0.0
         while i< len(self.categoryNames):
-            cat_count[i]= dict()
-            cat_total[i]= dict()
-            cat_document_count = 0
+            cat_count.append(dict())
+            cat_total.append(dict())
+            cat_document_count.append(0)
             category_name = self.categoryNames[i]
-            cat_word_count[i] = 0
+            cat_word_count.append( 0)
             for source in sources.get_sources(category_name):
                 cat_document_count[i] += 1
                 document_count+=1
@@ -128,7 +121,7 @@ class BayesCategorizer:
                     word_document_count[word]+= 1
                     cat_count[i][word]=score
                     total_count[word]+=score
-            i+=1
+            i += 1
         i = 0
         words_to_use = ()
         max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
@@ -155,6 +148,8 @@ class BayesCategorizer:
             prop_cat = cat_document_count[i]/document_count
             self.priorProb[i]= math.log(prop_cat)
             self.wordWeights = self.laplace_estimator( cat_total, cat_word_count, words_to_use, 1.0 )
+            i+=1
+        return document_count
 
     def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
         import math

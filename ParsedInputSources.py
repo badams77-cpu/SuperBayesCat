@@ -1,18 +1,21 @@
 class ParsedInputSources:
 
-    def __init__(self, mime_types ):
+    def __init__(self ):
         self.files = dict();
 
-    def add_directory(self, cat, dir):
+    def add_directory(self, cat, direct):
         files = [];
         import os
-        for file in os.listdir(dir):
-            files.append(os.path.join(dir,file));
+        for file in os.listdir(direct):
+            files.append(os.path.join(direct , file));
         self.files[cat]=files;
 
     def get_sources(self, cat):
         word_counts = []
         import TextParser
+        if not cat in self.files:
+            print("category not found: "+cat)
+            return word_counts
         for file in self.files[cat]:
             parser = TextParser()
             parser.parse(file)
