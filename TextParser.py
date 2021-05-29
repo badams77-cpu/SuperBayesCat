@@ -1,10 +1,8 @@
 class TextParser:
 
-
-
     def __init__(self):
-       import WordCount
-       self.word_count = WordCount()
+        from WordCount import WordCount
+        self.word_count = WordCount()
 
     def parse(self, file):
         import os
@@ -15,7 +13,7 @@ class TextParser:
             while True:
                 ch = f.read(1)
                 if not ch:
-                    if word.len() > 0:
+                    if len(word) > 0:
                         self.word_count.add_word(word, score)
                         word = ""
                     return
@@ -65,5 +63,5 @@ class TextParser:
                 else:
                     mode = 0
 
-    def get_word_count(self):
+    def get_word_counts(self):
         return self.word_count;

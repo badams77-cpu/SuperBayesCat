@@ -26,11 +26,12 @@ class BayesCategorizer:
         cat_num = 0
         parsed_category_sources = ParsedInputSources()
         for cat in os.listdir(directory):
-            self.categoryNames.extend(cat)
+            print("training category found: "+cat)
+            self.categoryNames.append(cat)
             self.categoryNumbers[cat] = cat_num
             cat_num += 1
-            parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
-        ndocs = self.make_categorizer( parsed_category_sources);
+            parsed_category_sources.add_directory(cat, os.path.join(directory, cat))
+        ndocs = self.make_categorizer(parsed_category_sources)
 
     def test_categorizer(self, directory):
         import os
@@ -42,7 +43,8 @@ class BayesCategorizer:
         cat_num = 0
         parsed_category_sources = ParsedInputSources()
         for cat in os.listdir(directory):
-            self.categoryNames.extend(cat)
+            self.categoryNames.append(cat)
+            print("test category found: "+cat)
             self.categoryNumbers[cat] = cat_num
             cat_num += 1
             parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
@@ -50,7 +52,7 @@ class BayesCategorizer:
         cat_index = 0
         while cat_index < self.categoryNames.len:
             cat_name = self.categoryNames[cat_index]
-            for source in parsed_category_sources.get_sources(cat):
+            for source in parsed_category_sources.get_sources(cat_name):
                 n_documents += 1
                 recognition_scores = self.recognition_scores(source)
                 best = -1
@@ -114,13 +116,13 @@ class BayesCategorizer:
                 cat_document_count[i] += 1
                 document_count+=1
                 for word in source.keys():
-                    if self.stopList[word]:
+                    if word in self.stopList:
                         continue
-                    score = source.score[word]
-                    cat_word_count[i]+= score
-                    word_document_count[word]+= 1
-                    cat_count[i][word]=score
-                    total_count[word]+=score
+                    score = source.score(word)
+                    cat_word_count[i] += score
+                    word_document_count[word] += 1
+                    cat_count[i][word] = score
+                    total_count[word] += score
             i += 1
         i = 0
         words_to_use = ()
