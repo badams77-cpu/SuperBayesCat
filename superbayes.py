@@ -13,9 +13,10 @@ def getopts(argv):
 
 if __name__ == '__main__':
     from sys import argv
+    import BayseCategorizer
     myargs = getopts(argv)
     if '-h' in myargs:
-        print("Usage: superbayes -b catdir -c catout\n")
+        print("Usage: superbayes -b catdir -t testdir -c catout\n")
         print("   build categories out of example text documents in catdir and saves the categorizer file as catout\n\n")
         print("superbayes -i document -c catin\n")
         print("   reads the categorizer file and categorizes document as and outputs the matching category to stdout\n\n")
@@ -28,4 +29,13 @@ if __name__ == '__main__':
         exit(0)
     if '-b' in myargs:
         print("building")
+        categorizer = BayseCategorizer()
+        if not myargs['i']:
+            print("Usage: superbayes -b catdir -t testdir -c catout\n")
+            print("   build categories out of example text documents in catdir and saves the categorizer file as catout\n\n")
+            exit(0)
+        categorizer.build_categorizer(myargs['i'])
+        if myargs['t']:
+            accuracy = categorizer.test_categorizer(myargs['t'])
+            print(" tested "+accuracy+"% accurate")
         exit(0)

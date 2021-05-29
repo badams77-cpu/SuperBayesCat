@@ -7,11 +7,7 @@ class BayesCategorizer:
     # Constants
     scoreForTitle=5.0
     informationGainedThresholdWords = 0.1
-    informationGainedThresholdPairs = 0.1
     percentOfDocumentForStopListWords = 60
-    percentOfDocumentForStopListPairs = 60
-    weightBoostForPair = 2.0
-    rmsInformationCheck = True
     superBayesAmount = 0.0
 
     # static data
@@ -25,10 +21,12 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
+        self.informationGainedThresholdWords = 0.1
+        self.percentOfDocumentForStopListWords = 60
+        self.superBayesAmount = 0.0
 
-#    def build_categorizer(self, directory):
 
-    def test_categorizer(self, directory):
+    def build_categorizer(self, directory):
         import os
         import ParsedInputSources
         if not os.path.isdir(directory):
@@ -40,14 +38,29 @@ class BayesCategorizer:
             self.categoryNumbers[cat] = cat_num
             cat_num += 1
             parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
+        ndocs = self.ake_categorizer( parsed_category_sources);
+
+    def test_categorizer(self, directory):
+        import os
+        import ParsedInputSources
+        if not os.path.isdir(directory):
+            raise RuntimeError(directory + " is not a directory")
+
         ok_sources = 0
+        cat_num = 0
+        parsed_category_sources = ParsedInputSources()
+        for cat in os.listdir(directory):
+            self.categoryNames.extend(cat)
+            self.categoryNumbers[cat] = cat_num
+            cat_num += 1
+            parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
         n_documents = 0
         cat_index = 0
         while cat_index < self.categoryNames.len:
             cat_name = self.categoryNames[cat_index]
             for source in parsed_category_sources.get_sources(cat):
                 n_documents += 1
-                recognition_scores = recognition_scores(source)
+                recognition_scores = self.recognition_scores(source)
                 best = -1
                 best_score = -1e30
                 rec_index = 0
@@ -86,7 +99,74 @@ class BayesCategorizer:
                 files.append(name)
         return files
 
-#    def make_categorizer(self):
+    def make_categorizer(self, sources):
+        import math
+        document_word_count = 0
+        total_word_count = 0
+        document_count = 0
+        word_document_count = dict();
+        total_count = dict();
+        i = 0
+        cat_count = []
+        cat_total = []
+        cat_word_count = []
+        average_word_factor = 0.0
+        while i< len(self.categoryNames):
+            cat_count[i]= dict()
+            cat_total[i]= dict()
+            cat_document_count = 0
+            category_name = self.categoryNames[i]
+            cat_word_count[i] = 0
+            for source in sources.get_sources(category_name):
+                cat_document_count[i] += 1
+                document_count+=1
+                for word in source.keys():
+                    if self.stopList[word]:
+                        continue
+                    score = source.score[word]
+                    cat_word_count[i]+= score
+                    word_document_count[word]+= 1
+                    cat_count[i][word]=score
+                    total_count[word]+=score
+            i+=1
+        i = 0
+        words_to_use = ()
+        max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
+        for word in total_count.keys():
+            if word_document_count[word]<3:
+                continue
+            square_info_gained = 0.0
+            while i< len(self.categoryNames):
+                prob_word = word_document_count[word]/document_count
+                prob_cat_given_word = cat_count[i][word]/cat_document_count[i]
+                information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy( 1.0 - prob_cat_given_word)
+                square_info_gained += information*information
+                i+=1
+            if square_info_gained > self.informationGainedThresholdWords * self.informationGainedThresholdWords:
+                words_to_use.append(word)
+        self.wordNumbers = dict();
+        i=0
+        for word in words_to_use:
+            self.wordNumbers[word]=i
+
+        i=0
+        while i< len(self.categoryNames):
+            category_name = self.categoryNames[i]
+            prop_cat = cat_document_count[i]/document_count
+            self.priorProb[i]= math.log(prop_cat)
+            self.wordWeights = self.laplace_estimator( cat_total, cat_word_count, words_to_use, 1.0 )
+
+    def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
+        import math
+        ret  = []
+        i = 0
+        while i<len(keys):
+            ret[i] = []
+            j = 0
+            key = keys[i]
+            while j<len(cat_word_count):
+               ret[i][j] = weight * math.log( 1.0 + word_freq[j][key]/ (len(keys)+cat_word_count[j]))
+        return ret
 
     def recognition_scores(self, word_count):
         rec_scores = []
@@ -118,3 +198,9 @@ class BayesCategorizer:
             rec_index += 1
         best_cat_name = self.categoryNames[best]
         return best_cat_name
+
+    def entropy(self, prop):
+        import math
+        if prop<1.0e-7:
+            return 0
+        return prop * math.log(prop)
