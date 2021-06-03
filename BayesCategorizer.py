@@ -65,7 +65,7 @@ class BayesCategorizer:
                         best = rec_index
                     rec_index = rec_index + 1
                 best_cat_name = self.categoryNames[best]
-                print( str(n_documents) + " cat= "+cat_name+" best fit "+best_cat_name)
+                print( str(n_documents) + " cat= " + cat_name + " best fit " + best_cat_name + " best="+str(best))
                 if best == cat_index:
                     ok_sources = ok_sources + 1
             cat_index = cat_index + 1
@@ -123,7 +123,7 @@ class BayesCategorizer:
                         continue
                     score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
-                    cat_word_count[i] = score
+                    cat_word_count[i] += score
                     word_document_count[word1] = score + word_document_count.get(word1, 0)
                     cat_count[i][word1] = score
                     cat_total[i][word1] = score
@@ -185,7 +185,6 @@ class BayesCategorizer:
         while i < len(self.priorProb):
             rec_scores.append(self.priorProb[i])
             i += 1
-        word_number = -1
         for word in word_count.keys():
             if word in self.wordNumbers:
                 word_number = self.wordNumbers[word]
