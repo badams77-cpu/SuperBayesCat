@@ -13,7 +13,7 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
-        self.informationGainedThresholdWords = 0.001
+        self.informationGainedThresholdWords = 0.01
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 0.0
 
@@ -42,11 +42,12 @@ class BayesCategorizer:
         ok_sources = 0
         cat_num = 0
         parsed_category_sources = ParsedInputSources()
+        cat_numbers = dict()
         for cat in os.listdir(directory):
-            self.categoryNames.append(cat)
+            if not cat in self.categoryNumbers:
+                continue
             print("test category found: "+cat)
-            self.categoryNumbers[cat] = cat_num
-            cat_num += 1
+#            self.categoryNumbers[cat] = cat_num
             parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
         n_documents = 0
         cat_index = 0
