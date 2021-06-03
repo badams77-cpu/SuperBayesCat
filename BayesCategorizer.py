@@ -124,7 +124,7 @@ class BayesCategorizer:
                     score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
-                    word_document_count[word1] = score + word_document_count.get(word1, 0)
+                    word_document_count[word1] = 1 + word_document_count.get(word1, 0)
                     cat_count[i][word1] = score
                     cat_total[i][word1] = score
                     total_count[word1] = total_count.get(word1, 0) + score
