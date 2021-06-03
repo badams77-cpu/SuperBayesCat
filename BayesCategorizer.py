@@ -50,7 +50,7 @@ class BayesCategorizer:
             parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
         n_documents = 0
         cat_index = 0
-        while cat_index < self.categoryNames.len:
+        while cat_index < len(self.categoryNames):
             cat_name = self.categoryNames[cat_index]
             for source in parsed_category_sources.get_sources(cat_name):
                 n_documents += 1
@@ -58,7 +58,7 @@ class BayesCategorizer:
                 best = -1
                 best_score = -1e30
                 rec_index = 0
-                while rec_index < recognition_scores.len:
+                while rec_index < len(recognition_scores):
                     rec = recognition_scores[rec_index]
                     if rec > best_score:
                         best_score = rec
@@ -68,7 +68,7 @@ class BayesCategorizer:
                 best_cat_name = self.categoryNames[best]
                 if best == cat_index:
                     ok_sources = ok_sources + 1
-        cat_index = cat_index + 1
+            cat_index = cat_index + 1
         return (100.0 * ok_sources)/n_documents
 
     def list_files(self, path):
@@ -119,66 +119,70 @@ class BayesCategorizer:
                     if word in self.stopList:
                         continue
                     score = source.score(word)
-                    cat_word_count[i] += score
-                    word_document_count[word] += 1
+                    cat_word_count[i] = score
+                    word_document_count[word] = 1+ word_document_count.get(word, 0)
                     cat_count[i][word] = score
-                    total_count[word] += score
+                    total_count[word] = total_count.get(word, 0)+ score
             i += 1
         i = 0
-        words_to_use = ()
+        words_to_use = []
         max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
         for word in total_count.keys():
-            if word_document_count[word]<3:
+            if word_document_count.get(word, 0) < 3:
                 continue
             square_info_gained = 0.0
-            while i< len(self.categoryNames):
+            while i < len(self.categoryNames):
                 prob_word = word_document_count[word]/document_count
                 prob_cat_given_word = cat_count[i][word]/cat_document_count[i]
-                information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy( 1.0 - prob_cat_given_word)
+                information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy(1.0 - prob_cat_given_word)
                 square_info_gained += information*information
-                i+=1
+                i += 1
             if square_info_gained > self.informationGainedThresholdWords * self.informationGainedThresholdWords:
                 words_to_use.append(word)
-        self.wordNumbers = dict();
-        i=0
+        self.wordNumbers = dict()
+        i = 0
         for word in words_to_use:
-            self.wordNumbers[word]=i
-
-        i=0
-        while i< len(self.categoryNames):
+            self.wordNumbers[word] = i
+            i += 1
+        i = 0
+        self.priorProb = []
+        while i < len(self.categoryNames):
             category_name = self.categoryNames[i]
             prop_cat = cat_document_count[i]/document_count
-            self.priorProb[i]= math.log(prop_cat)
-            self.wordWeights = self.laplace_estimator( cat_total, cat_word_count, words_to_use, 1.0 )
-            i+=1
+            self.priorProb.append(math.log(prop_cat))
+            self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0 )
+            i += 1
         return document_count
 
     def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
         import math
-        ret  = []
+        ret = []
         i = 0
-        while i<len(keys):
-            ret[i] = []
+        while i < len(keys):
+            ret.append([])
             j = 0
             key = keys[i]
-            while j<len(cat_word_count):
-               ret[i][j] = weight * math.log( 1.0 + word_freq[j][key]/ (len(keys)+cat_word_count[j]))
+            while j < len(cat_word_count):
+                ret[i].append( weight * math.log( 1.0 + word_freq[j].get(key, 0) / (len(keys)+cat_word_count[j])))
+                print(key+" "+str(ret[i][j]))
+                j += 1
+            i += 1
         return ret
 
     def recognition_scores(self, word_count):
         rec_scores = []
         i = 0
-        while i<self.prior_prop.len:
-            rec_scores[i] = self.prior_prop[i]
+        while i < len(self.priorProb):
+            rec_scores.append(self.priorProb[i])
             i += 1
         word_number = -1
         for word in word_count.keys():
             if word in self.wordNumbers:
                 word_number = self.wordNumbers[word]
                 cat_num = 0
-                score = word_count.score[word]
-                while cat_num < rec_scores.len:
-                    rec_scores[i] += score * self.wordWeights[word_number][cat_num]
+                score = word_count.score(word)
+                while cat_num < len(rec_scores):
+                    rec_scores[cat_num] += score * self.wordWeights[word_number][cat_num]
                     cat_num += 1
         return rec_scores
 

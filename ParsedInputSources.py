@@ -20,6 +20,7 @@ class ParsedInputSources:
         for file in self.files[cat]:
             from TextParser import TextParser
             parser = TextParser()
+
             parser.parse(file)
             word_counts.append(parser.get_word_counts())
         return word_counts

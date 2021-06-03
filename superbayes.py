@@ -31,7 +31,7 @@ if __name__ == '__main__':
         print("building")
         categorizer = BayesCategorizer()
         categorizer.build_categorizer(myargs['-b'])
-        if myargs['-t']:
+        if '-t' in myargs:
             accuracy = categorizer.test_categorizer(myargs['-t'])
-            print(" tested "+accuracy+"% accurate")
+            print(" tested "+str(accuracy)+"% accurate")
         exit(0)
