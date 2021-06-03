@@ -111,7 +111,7 @@ class BayesCategorizer:
             cat_total.append(dict())
             cat_document_count.append(0)
             category_name = self.categoryNames[i]
-            cat_word_count.append( 0)
+            cat_word_count.append(0)
             for source in sources.get_sources(category_name):
                 cat_document_count[i] += 1
                 document_count += 1
@@ -158,10 +158,11 @@ class BayesCategorizer:
         self.priorProb = []
         while i < len(self.categoryNames):
             category_name = self.categoryNames[i]
-            prop_cat = cat_document_count[i]/document_count
-            self.priorProb.append(math.log(prop_cat))
-            self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
+            prob_cat = cat_document_count[i]/document_count
+            self.priorProb.append(math.log(prob_cat))
             i += 1
+        self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
+
         return document_count
 
     def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
@@ -173,8 +174,8 @@ class BayesCategorizer:
             j = 0
             key = keys[i]
             while j < len(cat_word_count):
-                ret[i].append(weight * math.log(1.0 + word_freq[j].get(key, 0) / (len(keys)+cat_word_count[j])))
-#                print(key+" "+str(ret[i][j]))
+                ret[i].append(weight * math.log( (1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
+#                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
                 j += 1
             i += 1
         return ret
@@ -186,12 +187,16 @@ class BayesCategorizer:
             rec_scores.append(self.priorProb[i])
             i += 1
         for word in word_count.keys():
-            if word in self.wordNumbers:
-                word_number = self.wordNumbers[word]
+            word1 = word.lower()
+            if word1 == word.upper():
+                continue
+            if word1 in self.wordNumbers:
+                word_number = self.wordNumbers[word1]
                 cat_num = 0
                 score = word_count.score(word)
                 while cat_num < len(rec_scores):
                     rec_scores[cat_num] += score * self.wordWeights[word_number][cat_num]
+#                    print("cat_num: "+str(cat_num)+ ", score="+str(rec_scores[cat_num]))
                     cat_num += 1
         return rec_scores
 
