@@ -13,7 +13,7 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
-        self.informationGainedThresholdWords = 0.1
+        self.informationGainedThresholdWords = 0.001
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 0.0
 
@@ -63,9 +63,9 @@ class BayesCategorizer:
                     if rec > best_score:
                         best_score = rec
                         best = rec_index
-
                     rec_index = rec_index + 1
                 best_cat_name = self.categoryNames[best]
+                print( str(n_documents) + " cat= "+cat_name+" best fit "+best_cat_name)
                 if best == cat_index:
                     ok_sources = ok_sources + 1
             cat_index = cat_index + 1
@@ -106,7 +106,7 @@ class BayesCategorizer:
         cat_word_count = []
         cat_document_count = []
         average_word_factor = 0.0
-        while i< len(self.categoryNames):
+        while i < len(self.categoryNames):
             cat_count.append(dict())
             cat_total.append(dict())
             cat_document_count.append(0)
@@ -114,32 +114,42 @@ class BayesCategorizer:
             cat_word_count.append( 0)
             for source in sources.get_sources(category_name):
                 cat_document_count[i] += 1
-                document_count+=1
+                document_count += 1
                 for word in source.keys():
+                    word1 = word.lower()
+                    if word.upper() == word1:
+                        continue
                     if word in self.stopList:
                         continue
-                    score = source.score(word)
+                    score = source.score(word1)
+#                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] = score
-                    word_document_count[word] = 1+ word_document_count.get(word, 0)
-                    cat_count[i][word] = score
-                    total_count[word] = total_count.get(word, 0)+ score
+                    word_document_count[word1] = score + word_document_count.get(word1, 0)
+                    cat_count[i][word1] = score
+                    cat_total[i][word1] = score
+                    total_count[word1] = total_count.get(word1, 0) + score
             i += 1
-        i = 0
         words_to_use = []
         max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
         for word in total_count.keys():
-            if word_document_count.get(word, 0) < 3:
+            if word_document_count.get(word, 0) < 2:
                 continue
             square_info_gained = 0.0
+            i = 0
             while i < len(self.categoryNames):
                 prob_word = word_document_count[word]/document_count
-                prob_cat_given_word = cat_count[i][word]/cat_document_count[i]
+                prob_cat_given_word = cat_count[i].get(word, 0) / cat_document_count[i]
                 information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy(1.0 - prob_cat_given_word)
                 square_info_gained += information*information
                 i += 1
+#                print("Word: "+word+" info "+str(square_info_gained)+" prop="+str(prob_word)+" prob_cat_given_word="+str(prob_cat_given_word))
             if square_info_gained > self.informationGainedThresholdWords * self.informationGainedThresholdWords:
+                print("Use word: "+word)
                 words_to_use.append(word)
+#            else:
+#                print("Word: "+word+" info "+str(square_info_gained)+" skipping ")
         self.wordNumbers = dict()
+        self.words = words_to_use
         i = 0
         for word in words_to_use:
             self.wordNumbers[word] = i
@@ -150,7 +160,7 @@ class BayesCategorizer:
             category_name = self.categoryNames[i]
             prop_cat = cat_document_count[i]/document_count
             self.priorProb.append(math.log(prop_cat))
-            self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0 )
+            self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
             i += 1
         return document_count
 
@@ -163,8 +173,8 @@ class BayesCategorizer:
             j = 0
             key = keys[i]
             while j < len(cat_word_count):
-                ret[i].append( weight * math.log( 1.0 + word_freq[j].get(key, 0) / (len(keys)+cat_word_count[j])))
-                print(key+" "+str(ret[i][j]))
+                ret[i].append(weight * math.log(1.0 + word_freq[j].get(key, 0) / (len(keys)+cat_word_count[j])))
+#                print(key+" "+str(ret[i][j]))
                 j += 1
             i += 1
         return ret
@@ -191,7 +201,7 @@ class BayesCategorizer:
         best_score = -1e30
         rec_index = 0
         recognition_scores = self.recognition_scores( word_count)
-        while rec_index < recognition_scores.len :
+        while rec_index < len(recognition_scores) :
             rec = recognition_scores[rec_index]
             if rec > best_score:
                 best_score = rec
@@ -202,6 +212,6 @@ class BayesCategorizer:
 
     def entropy(self, prop):
         import math
-        if prop<1.0e-7:
+        if prop < 1.0e-17:
             return 0
         return prop * math.log(prop)
