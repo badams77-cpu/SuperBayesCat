@@ -48,7 +48,7 @@ class TextParser:
                     if ch.isdigit():
                         word = word + ch
                         continue
-                    if ch == '.' or ch ==',' or ch == ':' or ch == ';':
+                    if ch == '.' or ch == ',' or ch == ':' or ch == ';':
                         self.word_count.add_word(word, score)
                         word = ""
                         mode = 3
@@ -57,10 +57,12 @@ class TextParser:
                         word = word + ch
                         mode = 1
                         continue
+                    else:     
                         self.word_count.add_word(word, score)
                         mode = 0
                         continue
                 else:
+                    self.word_count.add_word(word, score)
                     mode = 0
 
     def get_word_counts(self):
