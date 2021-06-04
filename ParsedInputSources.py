@@ -3,6 +3,9 @@ class ParsedInputSources:
     def __init__(self ):
         self.files = dict();
 
+    def number_of_cats(self):
+        return len(self.files);
+
     def add_directory(self, cat, direct):
         #       print("Add directory: "+direct+" to cat: "+cat)
         files = [];

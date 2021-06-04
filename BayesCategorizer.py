@@ -41,18 +41,21 @@ class BayesCategorizer:
 
         ok_sources = 0
         cat_num = 0
+        cat_names = []
         parsed_category_sources = ParsedInputSources()
         cat_numbers = dict()
         for cat in os.listdir(directory):
             if not cat in self.categoryNumbers:
                 continue
             print("test category found: "+cat)
-#            self.categoryNumbers[cat] = cat_num
-            parsed_category_sources.add_directory( cat,os.path.join(directory, cat))
+            cat_numbers[cat] = cat_num
+            cat_names.append(cat);
+            parsed_category_sources.add_directory(cat, os.path.join(directory, cat))
+            cat_num += 1
         n_documents = 0
         cat_index = 0
-        while cat_index < len(self.categoryNames):
-            cat_name = self.categoryNames[cat_index]
+        while cat_index < parsed_category_sources.number_of_cats():
+            cat_name = cat_names[cat_index]
             for source in parsed_category_sources.get_sources(cat_name):
                 n_documents += 1
                 recognition_scores = self.recognition_scores(source)
@@ -67,7 +70,7 @@ class BayesCategorizer:
                     rec_index = rec_index + 1
                 best_cat_name = self.categoryNames[best]
                 print( str(n_documents) + " cat= " + cat_name + " best fit " + best_cat_name + " best="+str(best))
-                if best == cat_index:
+                if best_cat_name == cat_name:
                     ok_sources = ok_sources + 1
             cat_index = cat_index + 1
         return (100.0 * ok_sources)/n_documents
@@ -126,8 +129,8 @@ class BayesCategorizer:
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
                     word_document_count[word1] = 1 + word_document_count.get(word1, 0)
-                    cat_count[i][word1] = score
-                    cat_total[i][word1] = score
+                    cat_count[i][word1] = cat_count[i].get(word1, 0) + score
+                    cat_total[i][word1] = cat_total[i].get(word1, 0) + score
                     total_count[word1] = total_count.get(word1, 0) + score
             i += 1
         words_to_use = []

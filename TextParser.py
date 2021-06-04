@@ -34,7 +34,7 @@ class TextParser:
                         continue
                 elif mode == 1:
                     if ch.isalpha() or ch.isdigit():
-                        word = word +ch
+                        word = word + ch
                         mode = 2
                         continue
                     if ch == '.' or ch == ';' or ch == ':':
