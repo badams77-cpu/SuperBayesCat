@@ -16,6 +16,7 @@ class BayesCategorizer:
         self.informationGainedThresholdWords = 0.01
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 0.0
+        self.correlation_error = []
 
 
     def build_categorizer(self, directory):
@@ -120,7 +121,13 @@ class BayesCategorizer:
                 cat_document_count[i] += 1
                 document_count += 1
                 for word in source.keys():
-
+                    word1 = word.lower()
+                    if word.upper() == word1:
+                        continue
+                    if word in self.stopList:
+                        continue
+                    word_num = self.wordNumbers[word1]
+                    score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
                     word_document_count[word1] = 1 + word_document_count.get(word1, 0)
@@ -165,21 +172,26 @@ class BayesCategorizer:
         return document_count
 
     def makeSuperBayes(self, sources):
+        import math
         word_count_by_document = []
         word_occur = []
         total_occur = []
         category_total_word_count = []
+        word_count_by_category = []
         category_for_document = []
         iword = 0
         while iword < len(self.wordNumbers):
             word_occur.append([])
             word_count_by_document.append([])
+            word_count_by_category.append([0] * len(self.categoryNumbers))
+            iword += 1
         n_document = 0
         category_number = 0
         while category_number < len(self.categoryNames):
             total_occur.append([])
             cat_total = 0
             category_name = self.categoryNames[category_number]
+
             for source in sources.get_sources(category_name):
                 for word in source.keys():
                     word1 = word.lower()
@@ -191,13 +203,92 @@ class BayesCategorizer:
                     occs = source.score(word1)
                     category_total_word_count += occs
                     cat_total += occs
-                    word_occur[word_num].append(oc)
+                    word_occur[word_num].append(occs)
                     word_count_by_document[word_num].append(n_document)
+                    word_count_by_category[word_num][category_number] += occs
                 category_for_document.append(category_number)
                 n_document += 1
             category_total_word_count += cat_total
+
             if cat_total == 0:
                 print("Warning category: "+category_name+" has no documents")
+        prop_words = []
+        iword = 0
+        while iword< len(self.categoryNames):
+            cat_prop = []
+            icat = 0
+            while icat < len(self.categoryNames):
+                count = category_total_word_count[icat]
+                if count==0:
+                    continue
+                cat_prop.append( word_count_by_category[iword][icat]/count)
+                icat += 1
+            iword += 1
+        aword = 1
+        corr_err = []
+        while aword < len(self.wordNumbers):
+            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword])
+            bword = 0
+            occ_a = word_count_by_category[aword]
+            loc_a = word_count_by_document[aword]
+            corr_err_inner = [0] * aword
+            while bword < aword:
+                occ_b = word_count_by_category[bword]
+                loc_b = word_count_by_document[bword]
+                pa = 0
+                pb = 0
+                ia = 0
+                ib = 0
+                corr = [0] * len(self.categoryNames)
+                n_corr = 0
+                try:
+                    while True:
+                        if pb < pa:
+                            ia += 1
+                            pa = loc_a[ia]
+                        elif pb < pa:
+                            ia += 1
+                            pa = loc_a[ia]
+                        else:
+                            corr[category_for_document[pa]] += occ_a[ia] * occ_b[ib]
+                            ia += 1
+                            pa = loc_a[ia]
+                            ia += 1
+                            pa = loc_a[ia]
+                            n_corr += 1
+                except:
+                    pass
+                if n_corr == 0:
+                    continue
+                d_corr = [0] * len(self.categoryNames)
+                j = 0
+                while j<len(self.categoryNames):
+                    count = category_total_word_count[icat]
+                    if count < 2:
+                        continue
+                        d_corr[j] = corr[j] / (count - 1.0)
+                    j += 1
+                dotprod = 0.0
+                papb_sq = 0.0
+                corr_sq = 0.0
+                j = 0
+                while j<len(self.categoryNames):
+                    pcata = prop_words[wa][j]
+                    pcatb = prop_words[wb][j]
+                    p2 = pcata*pcatb
+                    corr = d_corr[j]
+                    dotp += p2 * corr
+                    corr_sq += corr * corr
+                    papb_sq += p2 * p2
+                if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
+                    continue
+                corr_err_inner[wb] = (1.0 - dotp/ math.sqrt(corr_sq * papb_sq))
+                wb += 1
+            corr_err.append(corr_err_inner)
+            wa += 1
+        self.correlation_error = corr_err
+        print("")
+
 
     def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
         import math
