@@ -57,7 +57,7 @@ class TextParser:
                         word = word + ch
                         mode = 1
                         continue
-                    else:     
+                    else:
                         self.word_count.add_word(word, score)
                         mode = 0
                         continue
