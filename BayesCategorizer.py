@@ -126,7 +126,6 @@ class BayesCategorizer:
                         continue
                     if word in self.stopList:
                         continue
-                    word_num = self.wordNumbers[word1]
                     score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
@@ -199,30 +198,32 @@ class BayesCategorizer:
                         continue
                     if word in self.stopList:
                         continue
+                    if not word1 in self.wordNumbers:
+                        continue
                     word_num = self.wordNumbers[word1]
                     occs = source.score(word1)
-                    category_total_word_count += occs
                     cat_total += occs
                     word_occur[word_num].append(occs)
                     word_count_by_document[word_num].append(n_document)
                     word_count_by_category[word_num][category_number] += occs
                 category_for_document.append(category_number)
                 n_document += 1
-            category_total_word_count += cat_total
-
+            category_total_word_count.append(cat_total)
+            category_number += 1
             if cat_total == 0:
                 print("Warning category: "+category_name+" has no documents")
-        prop_words = []
+        prob_words = []
         iword = 0
-        while iword< len(self.categoryNames):
-            cat_prop = []
+        while iword < len(self.categoryNames):
+            cat_prob = []
             icat = 0
             while icat < len(self.categoryNames):
                 count = category_total_word_count[icat]
-                if count==0:
+                if count == 0:
                     continue
-                cat_prop.append( word_count_by_category[iword][icat]/count)
+                cat_prob.append(word_count_by_category[iword][icat]/count)
                 icat += 1
+            prob_words.append(cat_prob)
             iword += 1
         aword = 1
         corr_err = []
@@ -241,29 +242,34 @@ class BayesCategorizer:
                 ib = 0
                 corr = [0] * len(self.categoryNames)
                 n_corr = 0
-                try:
-                    while True:
-                        if pb < pa:
-                            ia += 1
-                            pa = loc_a[ia]
-                        elif pb < pa:
-                            ia += 1
-                            pa = loc_a[ia]
-                        else:
-                            corr[category_for_document[pa]] += occ_a[ia] * occ_b[ib]
-                            ia += 1
-                            pa = loc_a[ia]
-                            ia += 1
-                            pa = loc_a[ia]
-                            n_corr += 1
-                except:
-                    pass
+                while True:
+                    if pa < pb:
+                        ia += 1
+                        if ia >= len(loc_a):
+                            break
+                        pa = loc_a[ia]
+                    elif pb < pa:
+                        ib += 1
+                        if ib >= len(loc_b):
+                            break
+                        pb = loc_b[ib]
+                    else:
+                        corr[category_for_document[pa]] += occ_a[ia] * occ_b[ib]
+                        ia += 1
+                        if ia >= len(loc_a):
+                            break
+                        pa = loc_a[ia]
+                        ib += 1
+                        if ib >= len(loc_b):
+                            break
+                        pb = loc_b[ib]
+                        n_corr += 1
                 if n_corr == 0:
                     continue
                 d_corr = [0] * len(self.categoryNames)
                 j = 0
-                while j<len(self.categoryNames):
-                    count = category_total_word_count[icat]
+                while j < len(self.categoryNames):
+                    count = category_total_word_count[j]
                     if count < 2:
                         continue
                         d_corr[j] = corr[j] / (count - 1.0)
@@ -272,20 +278,22 @@ class BayesCategorizer:
                 papb_sq = 0.0
                 corr_sq = 0.0
                 j = 0
-                while j<len(self.categoryNames):
-                    pcata = prop_words[wa][j]
-                    pcatb = prop_words[wb][j]
+                while j < len(self.categoryNames):
+                    pcata = prob_words[aword][j]
+                    pcatb = prob_words[bword][j]
                     p2 = pcata*pcatb
                     corr = d_corr[j]
-                    dotp += p2 * corr
+                    dotprod += p2 * corr
                     corr_sq += corr * corr
                     papb_sq += p2 * p2
+                    j += 1
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
+                    bword += 1
                     continue
-                corr_err_inner[wb] = (1.0 - dotp/ math.sqrt(corr_sq * papb_sq))
-                wb += 1
+                corr_err_inner[wb] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq))
+                bword += 1
             corr_err.append(corr_err_inner)
-            wa += 1
+            aword += 1
         self.correlation_error = corr_err
         print("")
 
