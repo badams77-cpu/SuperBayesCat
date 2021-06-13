@@ -120,12 +120,7 @@ class BayesCategorizer:
                 cat_document_count[i] += 1
                 document_count += 1
                 for word in source.keys():
-                    word1 = word.lower()
-                    if word.upper() == word1:
-                        continue
-                    if word in self.stopList:
-                        continue
-                    score = source.score(word1)
+
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
                     word_document_count[word1] = 1 + word_document_count.get(word1, 0)
@@ -166,8 +161,43 @@ class BayesCategorizer:
             self.priorProb.append(math.log(prob_cat))
             i += 1
         self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
-
+        self.makeSuperBayes(sources);
         return document_count
+
+    def makeSuperBayes(self, sources):
+        word_count_by_document = []
+        word_occur = []
+        total_occur = []
+        category_total_word_count = []
+        category_for_document = []
+        iword = 0
+        while iword < len(self.wordNumbers):
+            word_occur.append([])
+            word_count_by_document.append([])
+        n_document = 0
+        category_number = 0
+        while category_number < len(self.categoryNames):
+            total_occur.append([])
+            cat_total = 0
+            category_name = self.categoryNames[category_number]
+            for source in sources.get_sources(category_name):
+                for word in source.keys():
+                    word1 = word.lower()
+                    if word.upper() == word1:
+                        continue
+                    if word in self.stopList:
+                        continue
+                    word_num = self.wordNumbers[word1]
+                    occs = source.score(word1)
+                    category_total_word_count += occs
+                    cat_total += occs
+                    word_occur[word_num].append(oc)
+                    word_count_by_document[word_num].append(n_document)
+                category_for_document.append(category_number)
+                n_document += 1
+            category_total_word_count += cat_total
+            if cat_total == 0:
+                print("Warning category: "+category_name+" has no documents")
 
     def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
         import math
