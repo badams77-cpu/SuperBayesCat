@@ -13,7 +13,7 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
-        self.informationGainedThresholdWords = 0.01
+        self.informationGainedThresholdWords = 0.1
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 0.0
         self.correlation_error = []
@@ -232,6 +232,7 @@ class BayesCategorizer:
         corr_err = []
         while aword < len(self.wordNumbers):
             print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword])
+#                 " "+ str(aword)+"<"+str(len(self.wordNumbers)))
             bword = 0
             occ_a = word_count_by_document[aword]
             loc_a = document_num_by_word[aword]
@@ -265,15 +266,16 @@ class BayesCategorizer:
 #                        print(" is "+str(category_for_document[pa]))
                         corr[category_for_document[pa]] += occ_a[ia] * occ_b[ib]
                         ia += 1
+                        ib += 1
                         if ia >= len(loc_a):
                             break
                         pa = loc_a[ia]
-                        ib += 1
                         if ib >= len(loc_b):
                             break
                         pb = loc_b[ib]
                         n_corr += 1
                 if n_corr == 0:
+                    bword += 1
                     continue
                 d_corr = [0] * len(self.categoryNames)
                 j = 0
