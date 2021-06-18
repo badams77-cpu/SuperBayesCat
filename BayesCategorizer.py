@@ -283,7 +283,7 @@ class BayesCategorizer:
                     count = category_total_word_count[j]
                     if count < 2:
                         continue
-                        d_corr[j] = corr[j] / (count - 1.0)
+                    d_corr[j] = corr[j] / (count - 1.0)
                     j += 1
                 dotprod = 0.0
                 papb_sq = 0.0
@@ -295,9 +295,9 @@ class BayesCategorizer:
                     pcata = prob_words[aword][j]
                     pcatb = prob_words[bword][j]
                     p2 = pcata*pcatb
-                    corr = d_corr[j]
-                    dotprod += p2 * corr
-                    corr_sq += corr * corr
+                    corr1 = d_corr[j]
+                    dotprod += p2 * corr1
+                    corr_sq += corr1 * corr1
                     papb_sq += p2 * p2
                     j += 1
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
@@ -347,13 +347,14 @@ class BayesCategorizer:
         iword = 1
         while iword < number_of_words:
             jword = 0
-            while jword < number_of_words:
+            while jword < iword:
                 word_a = word_num[iword]
                 word_b = word_num[jword]
                 if word_a < word_b:
                     x = self.correlation_error[word_b][word_a]
                 else:
                     x = self.correlation_error[word_a][word_b]
+
                 if correlation_factor[word_a] < x:
                     correlation_factor[word_a] = x
                 if correlation_factor[word_b] < x:
@@ -367,7 +368,8 @@ class BayesCategorizer:
             if x == 0:
                 sb_factor[i] = 1
             else:
-                sb_factor[i] = pow(2, -x)
+                sb_factor[i] = math.exp(-4.0*x)
+                print(" word "+self.words[i] + " sb_factor "+str(sb_factor))
             i += 1
         for word in word_count.keys():
             word1 = word.lower()
@@ -388,7 +390,7 @@ class BayesCategorizer:
         best_score = -1e30
         rec_index = 0
         recognition_scores = self.recognition_scores( word_count)
-        while rec_index < len(recognition_scores) :
+        while rec_index < len(recognition_scores):
             rec = recognition_scores[rec_index]
             if rec > best_score:
                 best_score = rec
