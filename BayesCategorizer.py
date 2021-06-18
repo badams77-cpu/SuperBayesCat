@@ -284,6 +284,7 @@ class BayesCategorizer:
                     if count < 2:
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
+#                    print("d_corr["+str(j)+"] = "+str(d_corr[j]))
                     j += 1
                 dotprod = 0.0
                 papb_sq = 0.0
@@ -304,6 +305,7 @@ class BayesCategorizer:
                     bword += 1
                     continue
                 corr_err_inner[bword] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq))
+#                print("corr_err_inner "+self.words[bword]+" = " + str(corr_err_inner[bword]))
                 bword += 1
             corr_err.append(corr_err_inner)
             aword += 1
@@ -340,9 +342,8 @@ class BayesCategorizer:
             if word1 == word.upper():
                 continue
             if word1 in self.wordNumbers:
-                word_num.append(self.wordNumbers[word])
+                word_num.append(self.wordNumbers[word1])
                 number_of_words += 1
-
         correlation_factor = [0] * len(self.wordNumbers)
         iword = 1
         while iword < number_of_words:
@@ -354,10 +355,11 @@ class BayesCategorizer:
                     x = self.correlation_error[word_b][word_a]
                 else:
                     x = self.correlation_error[word_a][word_b]
-
                 if correlation_factor[word_a] < x:
+                    print(self.words[word_a]+" "+str(x))
                     correlation_factor[word_a] = x
                 if correlation_factor[word_b] < x:
+                    print(self.words[word_b]+" "+str(x))
                     correlation_factor[word_b] = x
                 jword += 1
             iword += 1
@@ -389,7 +391,7 @@ class BayesCategorizer:
         best = -1
         best_score = -1e30
         rec_index = 0
-        recognition_scores = self.recognition_scores( word_count)
+        recognition_scores = self.recognition_scores(word_count)
         while rec_index < len(recognition_scores):
             rec = recognition_scores[rec_index]
             if rec > best_score:
