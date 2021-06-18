@@ -356,10 +356,10 @@ class BayesCategorizer:
                 else:
                     x = self.correlation_error[word_a][word_b]
                 if correlation_factor[word_a] < x:
-                    print(self.words[word_a]+" "+str(x))
+#                    print(self.words[word_a]+" "+str(x))
                     correlation_factor[word_a] = x
                 if correlation_factor[word_b] < x:
-                    print(self.words[word_b]+" "+str(x))
+#                    print(self.words[word_b]+" "+str(x))
                     correlation_factor[word_b] = x
                 jword += 1
             iword += 1
@@ -371,7 +371,7 @@ class BayesCategorizer:
                 sb_factor[i] = 1
             else:
                 sb_factor[i] = math.exp(-4.0*x)
-                print(" word "+self.words[i] + " sb_factor "+str(sb_factor))
+#                print(" word "+self.words[i] + " sb_factor "+str(sb_factor))
             i += 1
         for word in word_count.keys():
             word1 = word.lower()
