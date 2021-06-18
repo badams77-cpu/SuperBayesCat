@@ -13,7 +13,7 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
-        self.informationGainedThresholdWords = 0.1
+        self.informationGainedThresholdWords = 0.333
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
         self.correlation_error = []
@@ -303,7 +303,7 @@ class BayesCategorizer:
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
                     bword += 1
                     continue
-                corr_err_inner[wb] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq))
+                corr_err_inner[bword] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq))
                 bword += 1
             corr_err.append(corr_err_inner)
             aword += 1
@@ -334,25 +334,29 @@ class BayesCategorizer:
             rec_scores.append(self.priorProb[i])
             i += 1
         word_num = []
-        word_count = 0
+        number_of_words = 0
         for word in word_count.keys():
-            word_num.append(word);
-            word_count += word_count.get(word)
+            word1 = word.lower()
+            if word1 == word.upper():
+                continue
+            if word1 in self.wordNumbers:
+                word_num.append(self.wordNumbers[word])
+                number_of_words += 1
 
         correlation_factor = [0] * len(self.wordNumbers)
         iword = 1
-        while iword<word_count:
+        while iword < number_of_words:
             jword = 0
-            while jword<iword:
+            while jword < number_of_words:
                 word_a = word_num[iword]
                 word_b = word_num[jword]
                 if word_a < word_b:
                     x = self.correlation_error[word_b][word_a]
                 else:
                     x = self.correlation_error[word_a][word_b]
-                if correlation_factor[word_a]<x:
+                if correlation_factor[word_a] < x:
                     correlation_factor[word_a] = x
-                if correlation_factor[word_b]<x:
+                if correlation_factor[word_b] < x:
                     correlation_factor[word_b] = x
                 jword += 1
             iword += 1

@@ -13,6 +13,7 @@ def getopts(argv):
 
 if __name__ == '__main__':
     from sys import argv
+    import pickle
     from BayesCategorizer import BayesCategorizer
     myargs = getopts(argv)
     if '-h' in myargs:
@@ -31,7 +32,16 @@ if __name__ == '__main__':
         print("building")
         categorizer = BayesCategorizer()
         categorizer.build_categorizer(myargs['-b'])
+        if '-c' in myargs:
+            catout = open(myargs['-c'], 'wb')
+            pickle.dump(categorizer, catout)
         if '-t' in myargs:
             accuracy = categorizer.test_categorizer(myargs['-t'])
             print(" tested "+str(accuracy)+"% accurate")
         exit(0)
+    if '-t' in myargs:
+        if '-c' in myargs:
+            catout = open(myargs['-c'], 'rb')
+            categorizer = pickle.load(catout)
+            accuracy = categorizer.test_categorizer(myargs['-t'])
+            print(" tested "+str(accuracy)+"% accurate")
