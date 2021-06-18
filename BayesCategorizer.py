@@ -15,7 +15,7 @@ class BayesCategorizer:
         self.wordWeights = []
         self.informationGainedThresholdWords = 0.1
         self.percentOfDocumentForStopListWords = 60
-        self.superBayesAmount = 0.0
+        self.superBayesAmount = 1.0
         self.correlation_error = []
 
 
@@ -327,10 +327,43 @@ class BayesCategorizer:
         return ret
 
     def recognition_scores(self, word_count):
+        import math
         rec_scores = []
         i = 0
         while i < len(self.priorProb):
             rec_scores.append(self.priorProb[i])
+            i += 1
+        word_num = []
+        word_count = 0
+        for word in word_count.keys():
+            word_num.append(word);
+            word_count += word_count.get(word)
+
+        correlation_factor = [0] * len(self.wordNumbers)
+        iword = 1
+        while iword<word_count:
+            jword = 0
+            while jword<iword:
+                word_a = word_num[iword]
+                word_b = word_num[jword]
+                if word_a < word_b:
+                    x = self.correlation_error[word_b][word_a]
+                else:
+                    x = self.correlation_error[word_a][word_b]
+                if correlation_factor[word_a]<x:
+                    correlation_factor[word_a] = x
+                if correlation_factor[word_b]<x:
+                    correlation_factor[word_b] = x
+                jword += 1
+            iword += 1
+        i = 0
+        sb_factor = [0] * len(self.wordNumbers)
+        while i < len(self.wordNumbers):
+            x = correlation_factor[i]
+            if x == 0:
+                sb_factor[i] = 1
+            else:
+                sb_factor[i] = pow(2, -x)
             i += 1
         for word in word_count.keys():
             word1 = word.lower()
@@ -341,7 +374,7 @@ class BayesCategorizer:
                 cat_num = 0
                 score = word_count.score(word)
                 while cat_num < len(rec_scores):
-                    rec_scores[cat_num] += score * self.wordWeights[word_number][cat_num]
+                    rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
 #                    print("cat_num: "+str(cat_num)+ ", score="+str(rec_scores[cat_num]))
                     cat_num += 1
         return rec_scores
