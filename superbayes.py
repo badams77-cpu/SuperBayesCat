@@ -35,13 +35,15 @@ if __name__ == '__main__':
         if '-c' in myargs:
             catout = open(myargs['-c'], 'wb')
             pickle.dump(categorizer, catout)
+            catout.close()
         if '-t' in myargs:
             accuracy = categorizer.test_categorizer(myargs['-t'])
             print(" tested "+str(accuracy)+"% accurate")
         exit(0)
     if '-t' in myargs:
         if '-c' in myargs:
-            catout = open(myargs['-c'], 'rb')
-            categorizer = pickle.load(catout)
+            catin = open(myargs['-c'], 'rb')
+            categorizer = pickle.load(catin)
+            catin.close()
             accuracy = categorizer.test_categorizer(myargs['-t'])
             print(" tested "+str(accuracy)+"% accurate")

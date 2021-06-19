@@ -281,7 +281,7 @@ class BayesCategorizer:
                 j = 0
                 while j < len(self.categoryNames):
                     count = category_total_word_count[j]
-                    if count < 2:
+                    if count == 0:
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
 #                    print("d_corr["+str(j)+"] = "+str(d_corr[j]))
@@ -344,7 +344,7 @@ class BayesCategorizer:
             if word1 in self.wordNumbers:
                 word_num.append(self.wordNumbers[word1])
                 number_of_words += 1
-        correlation_factor = [1] * len(self.wordNumbers)
+        correlation_factor = [0] * len(self.wordNumbers)
         iword = 1
         while iword < number_of_words:
             jword = 0
@@ -356,21 +356,22 @@ class BayesCategorizer:
                 else:
                     x = self.correlation_error[word_a][word_b]
                 if correlation_factor[word_a] < x:
-                    print(self.words[word_a]+" "+str(x))
+#                    print(self.words[word_a]+" "+str(x))
                     correlation_factor[word_a] = x
                 if correlation_factor[word_b] < x:
-                    print(self.words[word_b]+" "+str(x))
+#                    print(self.words[word_b]+" "+str(x))
                     correlation_factor[word_b] = x
                 jword += 1
             iword += 1
         i = 0
         sb_factor = [0] * len(self.wordNumbers)
+        k = math.log(2);
         while i < len(self.wordNumbers):
             x = correlation_factor[i]
             if x == 0:
                 sb_factor[i] = 1
             else:
-                sb_factor[i] = math.pow(2,-x)
+                sb_factor[i] = math.exp(-k*x)
 #                print(" word "+self.words[i] + " sb_factor "+str(sb_factor))
             i += 1
         for word in word_count.keys():
