@@ -20,28 +20,28 @@ class BayesCategorizer:
         self.extra = []
 
     @staticmethod
-    def encode(obj, BayesCategorizer):
-        return {"sbc":True,
-        "categoryNames": obj.categoryNames,
-        "categoryNumbers": obj.categoryNumbers,
-        "words": obj.words,
-        "wordNumbers": obj.wordNumbers,
-        "wordPairs": obj.wordPairs,
-        "priorProp": obj.priorProb,
-        "wordWeights": obj.wordWeights,
-        "correlation_error": obj.correlation_error
-                };
+    def encode(obj):
+        if isinstance(obj, BayesCategorizer):
+            return {"sbc": True,
+                    "categoryNames": obj.categoryNames,
+                    "categoryNumbers": obj.categoryNumbers,
+                    "words": obj.words,
+                    "wordNumbers": obj.wordNumbers,
+                    "wordPairs": obj.wordPairs,
+                    "priorProb": obj.priorProb,
+                    "wordWeights": obj.wordWeights,
+                    "correlation_error": obj.correlation_error}
 
     @staticmethod
     def decode(obj):
-        if b"sbc" in obj:
+        if "sbc" in obj:
             sbc = BayesCategorizer();
             sbc.categoryNames = obj['categoryNames']
             sbc.categoryNumbers = obj['categoryNumbers']
             sbc.words = obj['words']
             sbc.wordNumbers = obj['wordNumbers']
             sbc.wordPairs = obj['wordPairs']
-            sbc.priorProp = obj['priorProb']
+            sbc.priorProb = obj['priorProb']
             sbc.wordWeights = obj['wordWeights']
             sbc.correlation_error = obj['correlation_error']
             return sbc
