@@ -13,7 +13,7 @@ def getopts(argv):
 
 if __name__ == '__main__':
     from sys import argv
-    import pickle
+    import msgpack
     from BayesCategorizer import BayesCategorizer
     myargs = getopts(argv)
     if '-h' in myargs:
@@ -34,7 +34,8 @@ if __name__ == '__main__':
         categorizer.build_categorizer(myargs['-b'])
         if '-c' in myargs:
             catout = open(myargs['-c'], 'wb')
-            pickle.dump(categorizer, catout)
+            packed = msgpack.packb(BayesCategorizer.encode(categorizer))
+            catout.write(packed)
             catout.close()
         if '-t' in myargs:
             accuracy = categorizer.test_categorizer(myargs['-t'])
@@ -43,7 +44,8 @@ if __name__ == '__main__':
     if '-t' in myargs:
         if '-c' in myargs:
             catin = open(myargs['-c'], 'rb')
-            categorizer = pickle.load(catin)
+            unpack = catin.read();
+            categorizer = BayesCategorizer.decode(msgpack.unpackb(unpack))
             catin.close()
             accuracy = categorizer.test_categorizer(myargs['-t'])
             print(" tested "+str(accuracy)+"% accurate")

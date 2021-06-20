@@ -17,6 +17,35 @@ class BayesCategorizer:
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
         self.correlation_error = []
+        self.extra = []
+
+    @staticmethod
+    def encode(obj, BayesCategorizer):
+        return {"sbc":True,
+        "categoryNames": obj.categoryNames,
+        "categoryNumbers": obj.categoryNumbers,
+        "words": obj.words,
+        "wordNumbers": obj.wordNumbers,
+        "wordPairs": obj.wordPairs,
+        "priorProp": obj.priorProb,
+        "wordWeights": obj.wordWeights,
+        "correlation_error": obj.correlation_error
+                };
+
+    @staticmethod
+    def decode(obj):
+        if b"sbc" in obj:
+            sbc = BayesCategorizer();
+            sbc.categoryNames = obj['categoryNames']
+            sbc.categoryNumbers = obj['categoryNumbers']
+            sbc.words = obj['words']
+            sbc.wordNumbers = obj['wordNumbers']
+            sbc.wordPairs = obj['wordPairs']
+            sbc.priorProp = obj['priorProb']
+            sbc.wordWeights = obj['wordWeights']
+            sbc.correlation_error = obj['correlation_error']
+            return sbc
+
 
 
     def build_categorizer(self, directory):
