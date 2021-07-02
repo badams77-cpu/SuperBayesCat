@@ -13,7 +13,7 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
-        self.informationGainedThresholdWords = 0.333
+        self.informationGainedThresholdWords = 0.1
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
         self.correlation_error = []
@@ -99,10 +99,11 @@ class BayesCategorizer:
                         best = rec_index
                     rec_index = rec_index + 1
                 best_cat_name = self.categoryNames[best]
-                print( str(n_documents) + " cat= " + cat_name + " best fit " + best_cat_name + " best="+str(best))
+                print(str(n_documents) + " cat= " + cat_name + " best fit " + best_cat_name + " best="+str(best))
                 if best_cat_name == cat_name:
                     ok_sources = ok_sources + 1
             cat_index = cat_index + 1
+        print(str(ok_sources)+" out of "+str(n_documents))
         return (100.0 * ok_sources)/n_documents
 
     def list_files(self, path):
@@ -172,18 +173,20 @@ class BayesCategorizer:
             i = 0
             while i < len(self.categoryNames):
                 prob_word = word_document_count[word]/document_count
+                prob_cat = cat_document_count[i] / document_count
                 prob_cat_given_word = cat_count[i].get(word, 0) / cat_document_count[i]
-                information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy(1.0 - prob_cat_given_word)
+                information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy(1.0 - prob_cat_given_word) - self.entropy(prob_cat)
                 square_info_gained += information*information
                 i += 1
 #                print("Word: "+word+" info "+str(square_info_gained)+" prop="+str(prob_word)+" prob_cat_given_word="+str(prob_cat_given_word))
             if square_info_gained > self.informationGainedThresholdWords * self.informationGainedThresholdWords:
-                print("Use word: "+word)
+#                print("Use word: "+word)
                 words_to_use.append(word)
 #            else:
 #                print("Word: "+word+" info "+str(square_info_gained)+" skipping ")
         self.wordNumbers = dict()
         self.words = words_to_use
+        print("Using "+str(len(words_to_use)) + " words");
         i = 0
         for word in words_to_use:
             self.wordNumbers[word] = i
@@ -231,11 +234,15 @@ class BayesCategorizer:
                         continue
                     word_num = self.wordNumbers[word1]
                     occs = source.score(word1)
+                    if occs == 0:
+                        continue
                     cat_total += occs
                     word_occur[word_num].append(occs)
                     document_num_by_word[word_num].append(n_document)
                     word_count_by_document[word_num].append(occs)
                     total_occur[category_number][word_num] += occs
+                    if word == 'oilfield' and category_number == 2:
+                        print("oilfield occs=" + str(occs)+" n_doc="+str(n_document))
                 category_for_document.append(category_number)
                 n_document += 1
             category_total_word_count.append(cat_total)
@@ -245,6 +252,7 @@ class BayesCategorizer:
                 print("Warning category: "+category_name+" has no documents")
         prob_words = []
         iword = 0
+        ncats = len(self.categoryNames)
         while iword < len(self.wordNumbers):
             cat_prob = []
             icat = 0
@@ -260,46 +268,49 @@ class BayesCategorizer:
         aword = 1
         corr_err = []
         while aword < len(self.wordNumbers):
-            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword])
+#            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword])
 #                 " "+ str(aword)+"<"+str(len(self.wordNumbers)))
             bword = 0
             occ_a = word_count_by_document[aword]
             loc_a = document_num_by_word[aword]
+            la = len(loc_a)
             corr_err_inner = [0] * aword
             while bword < aword:
                 occ_b = word_count_by_document[bword]
                 loc_b = document_num_by_word[bword]
-                pa = loc_a[0];
-                pb = loc_b[0];
+                pa = loc_a[0]
+                pb = loc_b[0]
                 ia = 0
                 ib = 0
-                corr = [0] * len(self.categoryNames)
+                corr = [0] * ncats
                 n_corr = 0
+                lb = len(loc_b)
                 while True:
                     if pa < pb:
                         ia += 1
-                        if ia >= len(loc_a):
+                        if ia >= la:
                             break
                         pa = loc_a[ia]
                     elif pb < pa:
                         ib += 1
-                        if ib >= len(loc_b):
+                        if ib >= lb:
                             break
                         pb = loc_b[ib]
                     else:
-                        if ia >= len(loc_a):
+                        if ia >= la:
                             break
-                        if ib >= len(loc_b):
+                        if ib >= lb:
                             break
-#                        print(" category for document pa="+str(pa), " ia="+str(ia)+"<"+str(len(occ_a))+" ib="+str(ib)+ "<"+str(len(occ_b)));
-#                        print(" is "+str(category_for_document[pa]))
+                        if self.words[aword] == 'natural' and self.words[bword] == 'oilfield':
+                            print(" category for document pa="+str(pa), " ia="+str(ia)+" occ_a="+str((occ_a[ia]))+" ib="+str(ib)+ " occ_b="+str(occ_b[ib]))
+                            print(" is "+str(category_for_document[pa]))
                         corr[category_for_document[pa]] += occ_a[ia] * occ_b[ib]
                         ia += 1
                         ib += 1
-                        if ia >= len(loc_a):
+                        if ia >= la:
                             break
                         pa = loc_a[ia]
-                        if ib >= len(loc_b):
+                        if ib >= lb:
                             break
                         pb = loc_b[ib]
                         n_corr += 1
@@ -310,10 +321,11 @@ class BayesCategorizer:
                 j = 0
                 while j < len(self.categoryNames):
                     count = category_total_word_count[j]
-                    if count == 0:
+                    if count < 1:
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
-#                    print("d_corr["+str(j)+"] = "+str(d_corr[j]))
+                    if self.words[aword] == 'natural' and corr[j] != 0:
+                        print(self.words[bword] + " d_corr["+str(j)+"] = "+str(corr[j]))
                     j += 1
                 dotprod = 0.0
                 papb_sq = 0.0
@@ -334,7 +346,8 @@ class BayesCategorizer:
                     bword += 1
                     continue
                 corr_err_inner[bword] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq))
-#                print("corr_err_inner "+self.words[bword]+" = " + str(corr_err_inner[bword]))
+                if self.words[aword] == 'natural' and dotprod != 0:
+                    print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
                 bword += 1
             corr_err.append(corr_err_inner)
             aword += 1
@@ -377,13 +390,17 @@ class BayesCategorizer:
         iword = 1
         while iword < number_of_words:
             jword = 0
-            while jword < iword:
+            while jword < number_of_words:
                 word_a = word_num[iword]
                 word_b = word_num[jword]
-                if word_a < word_b:
-                    x = self.correlation_error[word_b][word_a]
-                else:
-                    x = self.correlation_error[word_a][word_b]
+                x = 0
+                try:
+                    if word_a < word_b:
+                        x = self.correlation_error[word_b][word_a]
+                    elif word_a != word_b:
+                        x = self.correlation_error[word_a][word_b]
+                except:
+                    x = 0
                 if correlation_factor[word_a] < x:
 #                    print(self.words[word_a]+" "+str(x))
                     correlation_factor[word_a] = x
@@ -394,14 +411,14 @@ class BayesCategorizer:
             iword += 1
         i = 0
         sb_factor = [0] * len(self.wordNumbers)
-        k = math.log(2);
+        k = math.log(2.0)
         while i < len(self.wordNumbers):
             x = correlation_factor[i]
             if x == 0:
                 sb_factor[i] = 1
             else:
+#                sb_factor[i] = 1
                 sb_factor[i] = math.exp(-k*x)
-#                print(" word "+self.words[i] + " sb_factor "+str(sb_factor))
             i += 1
         for word in word_count.keys():
             word1 = word.lower()
@@ -411,9 +428,12 @@ class BayesCategorizer:
                 word_number = self.wordNumbers[word1]
                 cat_num = 0
                 score = word_count.score(word)
+                if word1 == "natural":
+                    print("natural "+str(sb_factor[word_number]))
+
                 while cat_num < len(rec_scores):
                     rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
-#                    print("cat_num: "+str(cat_num)+ ", score="+str(rec_scores[cat_num]))
+#                    print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
                     cat_num += 1
         return rec_scores
 
