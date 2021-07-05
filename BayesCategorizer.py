@@ -225,7 +225,7 @@ class BayesCategorizer:
             i += 1
             cat_docs.append(0)
         i = 0
-        while i < len(self.categoryNames):
+        while i < n_cats:
             category_name = self.categoryNames[i]
             inner_cat_pair_count = cat_pair_count[i]
             inner_cat_pair_total = cat_pair_total[i]
@@ -261,8 +261,9 @@ class BayesCategorizer:
                         inner_cat_count_pairs += 1
                         doc_pair_count[word_pair] = doc_pair_count.get(word_pair,0) + 1
                         inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0) + 1
-                n_total_pairs += n_cat_total_pairs
-                n_cat_total_pairs[i] += n_cat_count_pairs
+                n_total_pairs += inner_cat_total_pairs
+                n_cat_total_pairs[i] += inner_cat_count_pairs
+            i += 1
         # Pair selection
         pairs_to_use = []
         igtp2 = self.informationGainedThresholdPairs * self.informationGainedThresholdPairs
@@ -272,12 +273,14 @@ class BayesCategorizer:
             i = 0
             while i < n_cats:
                 proc_cat = cat_docs[i] / n_doc_total
-                prob_pair = doc_pair_count.get(pair,0)/ n_doc_total
-                prob_cat_given_pair = cat_pair_count.get(pair, 0) / cat_docs[i]
-                info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy( 1.0 - prob_cat_given_pair)
+                prob_pair = doc_pair_count.get(pair, 0)/ n_doc_total
+                prob_cat_given_pair = cat_pair_count[i].get(pair, 0) / cat_docs[i]
+                info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy(1.0 - prob_cat_given_pair)
                 info_gained2 += info*info
+                i += 1
             if info_gained2 > igtp2:
                 pairs_to_use.append(pair)
+
         self.wordPairs = pairs_to_use
         print("Using "+str(len(pairs_to_use))+" word pairs")
 
