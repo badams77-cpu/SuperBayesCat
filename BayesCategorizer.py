@@ -14,6 +14,7 @@ class BayesCategorizer:
         self.priorProb = []
         self.wordWeights = []
         self.informationGainedThresholdWords = 0.1
+        self.informationGainedThresholdPairs = 0.1
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
         self.correlation_error = []
@@ -199,8 +200,87 @@ class BayesCategorizer:
             self.priorProb.append(math.log(prob_cat))
             i += 1
         self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
-        self.makeSuperBayes(sources);
+        self.makePairs(sources)
+        self.makeSuperBayes(sources)
+
+
         return document_count
+
+    def makePairs(self, sources):
+        n_total_pairs = 0
+        n_doc_pairs = 0
+        n_cats = len(self.categoryNames)
+        n_cat_count_pairs = [0] * n_cats
+        n_cat_total_pairs = [0] * n_cats
+        doc_pair_count = dict()
+        tot_pair_count = dict()
+        cat_pair_count = []
+        cat_pair_total = []
+        cat_docs = []
+        n_doc_total = 0
+        i = 0
+        while i < n_cats:
+            cat_pair_count.append(dict())
+            cat_pair_total.append(dict())
+            i += 1
+            cat_docs.append(0)
+        i = 0
+        while i < len(self.categoryNames):
+            category_name = self.categoryNames[i]
+            inner_cat_pair_count = cat_pair_count[i]
+            inner_cat_pair_total = cat_pair_total[i]
+            inner_cat_count_pairs = 0
+            inner_cat_total_pairs = 0
+            cat_docs[i] += 1
+            for source in sources.get_sources(category_name):
+                word_array = source.get_words()
+                if len(word_array) < 2:
+                    continue
+                this_doc = dict()
+                word_1_num = -1
+                n_doc_total += 1
+                for word in source.keys():
+                    word1 = word.lower()
+                    if word.upper() == word1:
+                        continue
+                    if word in self.stopList:
+                        continue
+                    if word not in self.wordNumbers:
+                        continue
+                    word_num = self.wordNumbers[word]
+                    if word_1_num==-1:
+                       word_1_num = word_num
+                       continue
+                    word_pair = (word_1_num, word_num)
+                    word_1_num = word_num
+                    tot_pair_count[word_pair] = tot_pair_count.get(word_pair, 0)+1
+                    inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0)+1
+                    new_pair = word_pair not in this_doc
+                    this_doc[word_pair] = this_doc.get(word_pair, 0) + 1
+                    if new_pair:
+                        inner_cat_count_pairs += 1
+                        doc_pair_count[word_pair] = doc_pair_count.get(word_pair,0) + 1
+                        inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0) + 1
+                n_total_pairs += n_cat_total_pairs
+                n_cat_total_pairs[i] += n_cat_count_pairs
+        # Pair selection
+        pairs_to_use = []
+        igtp2 = self.informationGainedThresholdPairs * self.informationGainedThresholdPairs
+        for pair in tot_pair_count.keys():
+            info_gained2 = 0
+            pair_doc_count = doc_pair_count.get(pair, 0)
+            i = 0
+            while i < n_cats:
+                proc_cat = cat_docs[i] / n_doc_total
+                prob_pair = doc_pair_count.get(pair,0)/ n_doc_total
+                prob_cat_given_pair = cat_pair_count.get(pair, 0) / cat_docs[i]
+                info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy( 1.0 - prob_cat_given_pair)
+                info_gained2 += info*info
+            if info_gained2 > igtp2:
+                pairs_to_use.append(pair)
+        self.wordPairs = pairs_to_use
+        print("Using "+str(len(pairs_to_use))+" word pairs")
+
 
     def makeSuperBayes(self, sources):
         import math
@@ -316,21 +396,21 @@ class BayesCategorizer:
                 if n_corr == 0:
                     bword += 1
                     continue
-                d_corr = [0] * len(self.categoryNames)
+                d_corr = [0] * ncats
                 j = 0
-                while j < len(self.categoryNames):
+                while j < ncats:
                     count = category_total_word_count[j]
                     if count < 1:
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
-#                    if self.words[aword] == 'natural' and corr[j] != 0:
-#                        print(self.words[bword] + " d_corr["+str(j)+"] = "+str(corr[j]))
+                    if self.words[aword] == 'natural' and corr[j] != 0:
+                        print(self.words[bword] + " d_corr["+str(j)+"] = "+str(corr[j]))
                     j += 1
                 dotprod = 0.0
                 papb_sq = 0.0
                 corr_sq = 0.0
                 j = 0
-                while j < len(self.categoryNames):
+                while j < ncats:
 #                    if len(prob_words[aword]) <= j:
 #                        print(" error aword "+str(aword)+" cat len "+str(len(prob_words[aword])));
                     pcata = prob_words[aword][j]
@@ -344,7 +424,7 @@ class BayesCategorizer:
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
                     bword += 1
                     continue
-                corr_err_inner[bword] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq))
+                corr_err_inner[bword] = (dotprod / math.sqrt(corr_sq * papb_sq)) # originally 1-dotprod / ()
                 if self.words[aword] == 'natural' and dotprod != 0:
                    print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
                 bword += 1
@@ -416,7 +496,6 @@ class BayesCategorizer:
             if x == 0:
                 sb_factor[i] = 1
             else:
-#                sb_factor[i] = 1
                 sb_factor[i] = math.exp(-k*x)
             i += 1
         for word in word_count.keys():
@@ -427,8 +506,8 @@ class BayesCategorizer:
                 word_number = self.wordNumbers[word1]
                 cat_num = 0
                 score = word_count.score(word)
-                if word1 == "natural":
-                    print("natural "+str(sb_factor[word_number]))
+#               if word1 == "natural":
+#                    print("natural "+str(sb_factor[word_number]))
 
                 while cat_num < len(rec_scores):
                     rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
