@@ -33,6 +33,7 @@ class BayesCategorizer:
                     "wordPairs": obj.wordPairs,
                     "priorProb": obj.priorProb,
                     "wordWeights": obj.wordWeights,
+                    "pairWeights": obj.pairWeights,
                     "correlation_error": obj.correlation_error}
 
     @staticmethod
@@ -46,6 +47,8 @@ class BayesCategorizer:
             sbc.wordPairs = obj['wordPairs']
             sbc.priorProb = obj['priorProb']
             sbc.wordWeights = obj['wordWeights']
+            if 'pairWeights' in obj:
+                sbc.pairWeights = obj['pairWeights']
             sbc.correlation_error = obj['correlation_error']
             return sbc
 
@@ -284,7 +287,7 @@ class BayesCategorizer:
                 pairs_to_use.append(pair)
 
         self.wordPairs = pairs_to_use
-        self.wordWeights = self.laplace_estimator(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForBayer)
+        self.pairWeights = self.laplace_estimator(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForBayer)
         print("Using "+str(len(pairs_to_use))+" word pairs")
 
 
@@ -507,18 +510,16 @@ class BayesCategorizer:
         last_word = -1
         for word in word_count.wordList:
             word1 = word.lower()
-            if word1=='.':
+            if word1 == '.':
                 last_word = -1
                 continue
             if word1 == word.upper():
                 continue
             if word1 in self.wordNumbers:
                 word_number = self.wordNumbers[word1]
-
                 score = 1
 #               if word1 == "natural":
 #                    print("natural "+str(sb_factor[word_number]))
-                didPair = False
                 if last_word != -1:
                     pair = (last_word, word_number)
                     pair_weights = self.pairWeights.get(pair, [])
@@ -526,14 +527,15 @@ class BayesCategorizer:
                     last_weights = self.wordWeights.get(last_word, [])
                     a = sb_factor[word_number]
                     b = sb_factor[last_word]
-                    c = max(a,b)
+                    c = max(a, b)
                     cat_num = 0
                     while cat_num < len(rec_scores):
-                        rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[ca_num]
+                        rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
                         cat_num += 1
                 else:
                     cat_num = 0
                     while cat_num < len(rec_scores):
+#                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]) +" word_number="+str(word_number))
                         rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
                         cat_num += 1
