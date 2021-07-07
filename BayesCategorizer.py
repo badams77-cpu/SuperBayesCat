@@ -13,10 +13,12 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
+        self.pairWeights = []
         self.informationGainedThresholdWords = 0.1
         self.informationGainedThresholdPairs = 0.1
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
+        self.weightBoostForBayer = 2.0
         self.correlation_error = []
         self.extra = []
 
@@ -272,16 +274,17 @@ class BayesCategorizer:
             pair_doc_count = doc_pair_count.get(pair, 0)
             i = 0
             while i < n_cats:
-                proc_cat = cat_docs[i] / n_doc_total
+                prob_cat = cat_docs[i] / n_doc_total
                 prob_pair = doc_pair_count.get(pair, 0)/ n_doc_total
                 prob_cat_given_pair = cat_pair_count[i].get(pair, 0) / cat_docs[i]
-                info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy(1.0 - prob_cat_given_pair)
+                info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy(1.0 - prob_cat_given_pair) - self.entropy(prob_cat)
                 info_gained2 += info*info
                 i += 1
             if info_gained2 > igtp2:
                 pairs_to_use.append(pair)
 
         self.wordPairs = pairs_to_use
+        self.wordWeights = self.laplace_estimator(cat_pair_total, n_total_pairs, pairs_to_use, self.weightBoostForBayer)
         print("Using "+str(len(pairs_to_use))+" word pairs")
 
 
@@ -427,7 +430,7 @@ class BayesCategorizer:
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
                     bword += 1
                     continue
-                corr_err_inner[bword] = (dotprod / math.sqrt(corr_sq * papb_sq)) # originally 1-dotprod / ()
+                corr_err_inner[bword] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq)) # originally 1-dotprod / ()
                 if self.words[aword] == 'natural' and dotprod != 0:
                    print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
                 bword += 1
@@ -501,21 +504,39 @@ class BayesCategorizer:
             else:
                 sb_factor[i] = math.exp(-k*x)
             i += 1
-        for word in word_count.keys():
+        last_word = -1
+        for word in word_count.wordList:
             word1 = word.lower()
+            if word1=='.':
+                last_word = -1
+                continue
             if word1 == word.upper():
                 continue
             if word1 in self.wordNumbers:
                 word_number = self.wordNumbers[word1]
-                cat_num = 0
-                score = word_count.score(word)
+
+                score = 1
 #               if word1 == "natural":
 #                    print("natural "+str(sb_factor[word_number]))
-
-                while cat_num < len(rec_scores):
-                    rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
-#                    print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
-                    cat_num += 1
+                didPair = False
+                if last_word != -1:
+                    pair = (last_word, word_number)
+                    pair_weights = self.pairWeights.get(pair, [])
+                    weights = self.wordWeights.get(word_num,[])
+                    last_weights = self.wordWeights.get(last_word, [])
+                    a = sb_factor[word_number]
+                    b = sb_factor[last_word]
+                    c = max(a,b)
+                    cat_num = 0
+                    while cat_num < len(rec_scores):
+                        rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[ca_num]
+                        cat_num += 1
+                else:
+                    cat_num = 0
+                    while cat_num < len(rec_scores):
+                        rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
+#                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
+                        cat_num += 1
         return rec_scores
 
     def find_category_of(self, word_count):

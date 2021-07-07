@@ -50,6 +50,8 @@ class TextParser:
                         continue
                     if ch == '.' or ch == ',' or ch == ':' or ch == ';':
                         self.word_count.add_word(word, score)
+                        if ch != ',':
+                            self.word_count.add_word(".", 0)
                         word = ""
                         mode = 3
                         continue
