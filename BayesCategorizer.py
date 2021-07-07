@@ -256,12 +256,12 @@ class BayesCategorizer:
                     word_pair = (word_1_num, word_num)
                     word_1_num = word_num
                     tot_pair_count[word_pair] = tot_pair_count.get(word_pair, 0)+1
-                    inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0)+1
+                    inner_cat_pair_total[word_pair] = inner_cat_pair_total.get(word_pair, 0)+1
                     new_pair = word_pair not in this_doc
                     this_doc[word_pair] = this_doc.get(word_pair, 0) + 1
                     if new_pair:
                         inner_cat_count_pairs += 1
-                        doc_pair_count[word_pair] = doc_pair_count.get(word_pair,0) + 1
+                        doc_pair_count[word_pair] = doc_pair_count.get(word_pair ,0) + 1
                         inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0) + 1
                 n_total_pairs += inner_cat_total_pairs
                 n_cat_total_pairs[i] += inner_cat_count_pairs
@@ -284,7 +284,7 @@ class BayesCategorizer:
                 pairs_to_use.append(pair)
 
         self.wordPairs = pairs_to_use
-        self.wordWeights = self.laplace_estimator(cat_pair_total, n_total_pairs, pairs_to_use, self.weightBoostForBayer)
+        self.wordWeights = self.laplace_estimator(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForBayer)
         print("Using "+str(len(pairs_to_use))+" word pairs")
 
 
