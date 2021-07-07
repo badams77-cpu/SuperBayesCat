@@ -536,7 +536,7 @@ class BayesCategorizer:
                     cat_num = 0
                     while cat_num < len(rec_scores):
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]) +" word_number="+str(word_number))
-                        rec_scores[cat_num] += score * sb_factor[word_number] * self.wordWeights[word_number][cat_num]
+                        rec_scores[cat_num] += sb_factor[word_number] * self.wordWeights[word_number][cat_num]
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
                         cat_num += 1
         return rec_scores
