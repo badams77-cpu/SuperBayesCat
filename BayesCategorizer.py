@@ -13,7 +13,7 @@ class BayesCategorizer:
         self.wordPairs = []
         self.priorProb = []
         self.wordWeights = []
-        self.pairWeights = []
+        self.pairWeights = dict()
         self.informationGainedThresholdWords = 0.5
         self.informationGainedThresholdPairs = 0.01
         self.percentOfDocumentForStopListWords = 60
@@ -530,10 +530,10 @@ class BayesCategorizer:
                 done_pair = False;
                 if last_word != -1:
                     pair = (word_number, last_word)
-                    if pair in self.pairWeights:
+                    pair_weights = self.pairWeights.get(pair, [])
+                    if len(pair_weights)>0:
                         print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
-                        pair_weights = self.pairWeights.get(pair, [])
-                        weights = self.wordWeights.get(word_num,[])
+                        weights = self.wordWeights.get(word_num, [])
                         last_weights = self.wordWeights.get(last_word, [])
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
