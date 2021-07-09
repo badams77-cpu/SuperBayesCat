@@ -294,7 +294,7 @@ class BayesCategorizer:
                 pairs_to_use.append(pair)
 
         self.wordPairs = pairs_to_use
-        self.pairWeights = self.laplace_estimator(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForPair)
+        self.pairWeights = self.laplace_estimator_pairs(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForPair)
         print("Using "+str(len(pairs_to_use))+" word pairs")
 
 
@@ -463,6 +463,21 @@ class BayesCategorizer:
 #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
                 j += 1
             i += 1
+        return ret
+
+    def laplace_estimator_pairs(self, word_freq, cat_word_count, keys, weight):
+        import math
+        ret = dict
+        j = 0
+        while j < len(keys):
+            ret.append([0] * len(cat_word_count))
+            i = 0
+            key = keys[j]
+            while i < len(cat_word_count):
+                ret[j][i].append(weight * math.log( (1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
+                #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
+                i += 1
+            j += 1
         return ret
 
     def recognition_scores(self, word_count):
