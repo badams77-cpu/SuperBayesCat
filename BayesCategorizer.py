@@ -467,14 +467,14 @@ class BayesCategorizer:
 
     def laplace_estimator_pairs(self, word_freq, cat_word_count, keys, weight):
         import math
-        ret = dict
+        ret = dict()
         j = 0
         while j < len(keys):
-            ret.append([0] * len(cat_word_count))
+            ret[keys[j]]= [0] * len(cat_word_count)
             i = 0
             key = keys[j]
             while i < len(cat_word_count):
-                ret[j][i].append(weight * math.log( (1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
+                ret[keys[j]][i].append(weight * math.log( (1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
                 #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
                 i += 1
             j += 1
