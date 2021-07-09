@@ -520,25 +520,30 @@ class BayesCategorizer:
                 score = 1
 #               if word1 == "natural":
 #                    print("natural "+str(sb_factor[word_number]))
+                done_pair = False;
                 if last_word != -1:
                     pair = (last_word, word_number)
-                    pair_weights = self.pairWeights.get(pair, [])
-                    weights = self.wordWeights.get(word_num,[])
-                    last_weights = self.wordWeights.get(last_word, [])
-                    a = sb_factor[word_number]
-                    b = sb_factor[last_word]
-                    c = max(a, b)
-                    cat_num = 0
-                    while cat_num < len(rec_scores):
-                        rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
-                        cat_num += 1
-                else:
+                    if pair in self.pairWeights:
+                        pair_weights = self.pairWeights.get(pair, [])
+                        weights = self.wordWeights.get(word_num,[])
+                        last_weights = self.wordWeights.get(last_word, [])
+                        a = sb_factor[word_number]
+                        b = sb_factor[last_word]
+                        c = max(a, b)
+                        cat_num = 0
+                        while cat_num < len(rec_scores):
+                            rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
+                            cat_num += 1
+                        done_pair = True
+                        last_word = -1
+                if not done_pair:
                     cat_num = 0
                     while cat_num < len(rec_scores):
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]) +" word_number="+str(word_number))
                         rec_scores[cat_num] += sb_factor[word_number] * self.wordWeights[word_number][cat_num]
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
                         cat_num += 1
+                    last_word = word_number
         return rec_scores
 
     def find_category_of(self, word_count):
