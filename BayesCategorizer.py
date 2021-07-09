@@ -459,7 +459,7 @@ class BayesCategorizer:
             j = 0
             key = keys[i]
             while j < len(cat_word_count):
-                ret[i].append(weight * math.log( (1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
+                ret[i].append(weight * math.log((1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
 #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
                 j += 1
             i += 1
@@ -470,11 +470,11 @@ class BayesCategorizer:
         ret = dict()
         j = 0
         while j < len(keys):
-            ret[keys[j]]= [0] * len(cat_word_count)
-            i = 0
             key = keys[j]
+            ret[key] = [0] * len(cat_word_count)
+            i = 0
             while i < len(cat_word_count):
-                ret[keys[j]][i].append(weight * math.log( (1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
+                ret[key][i] = weight * math.log((1.0 + word_freq[i].get(key, 0)) / (len(keys)+cat_word_count[i]))
                 #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
                 i += 1
             j += 1
