@@ -50,6 +50,7 @@ class BayesCategorizer:
             if 'pairWeights' in obj:
                 sbc.pairWeights = obj['pairWeights']
             sbc.correlation_error = obj['correlation_error']
+            print("read "+str(len(sbc.wordWeights))+" word weights and "+str(len(sbc.pairWeights))+" pair weights")
             return sbc
 
 
@@ -256,9 +257,9 @@ class BayesCategorizer:
                     if word not in self.wordNumbers:
                         continue
                     word_num = self.wordNumbers[word]
-                    if word_1_num==-1:
-                       word_1_num = word_num
-                       continue
+                    if word_1_num == -1:
+                        word_1_num = word_num
+                        continue
                     word_pair = (word_1_num, word_num)
                     word_1_num = word_num
                     tot_pair_count[word_pair] = tot_pair_count.get(word_pair, 0)+1
@@ -528,7 +529,7 @@ class BayesCategorizer:
 #                    print("natural "+str(sb_factor[word_number]))
                 done_pair = False;
                 if last_word != -1:
-                    pair = (last_word, word_number)
+                    pair = (word_number, last_word)
                     if pair in self.pairWeights:
                         print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
                         pair_weights = self.pairWeights.get(pair, [])
@@ -543,6 +544,8 @@ class BayesCategorizer:
                             cat_num += 1
                         done_pair = True
                         last_word = -1
+#                    else:
+#                        print("pair ("+str(last_word)+","+str(word_number)+" "+self.words[last_word]+","+self.words[word_number]+") not found")
                 if not done_pair:
                     cat_num = 0
                     while cat_num < len(rec_scores):
