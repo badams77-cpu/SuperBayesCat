@@ -14,11 +14,11 @@ class BayesCategorizer:
         self.priorProb = []
         self.wordWeights = []
         self.pairWeights = []
-        self.informationGainedThresholdWords = 0.1
-        self.informationGainedThresholdPairs = 0.1
+        self.informationGainedThresholdWords = 0.5
+        self.informationGainedThresholdPairs = 0.01
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
-        self.weightBoostForBayer = 2.0
+        self.weightBoostForPair = 2.0
         self.correlation_error = []
         self.extra = []
 
@@ -182,6 +182,9 @@ class BayesCategorizer:
                 prob_cat = cat_document_count[i] / document_count
                 prob_cat_given_word = cat_count[i].get(word, 0) / cat_document_count[i]
                 information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy(1.0 - prob_cat_given_word) - self.entropy(prob_cat)
+                if information < 0:
+                    i += 1
+                    continue
                 square_info_gained += information*information
                 i += 1
 #                print("Word: "+word+" info "+str(square_info_gained)+" prop="+str(prob_word)+" prob_cat_given_word="+str(prob_cat_given_word))
@@ -281,13 +284,16 @@ class BayesCategorizer:
                 prob_pair = doc_pair_count.get(pair, 0)/ n_doc_total
                 prob_cat_given_pair = cat_pair_count[i].get(pair, 0) / cat_docs[i]
                 info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy(1.0 - prob_cat_given_pair) - self.entropy(prob_cat)
+                if info < 0:
+                    i += 1
+                    continue
                 info_gained2 += info*info
                 i += 1
             if info_gained2 > igtp2:
                 pairs_to_use.append(pair)
 
         self.wordPairs = pairs_to_use
-        self.pairWeights = self.laplace_estimator(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForBayer)
+        self.pairWeights = self.laplace_estimator(cat_pair_total, n_cat_total_pairs, pairs_to_use, self.weightBoostForPair)
         print("Using "+str(len(pairs_to_use))+" word pairs")
 
 
@@ -524,6 +530,7 @@ class BayesCategorizer:
                 if last_word != -1:
                     pair = (last_word, word_number)
                     if pair in self.pairWeights:
+                        print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
                         pair_weights = self.pairWeights.get(pair, [])
                         weights = self.wordWeights.get(word_num,[])
                         last_weights = self.wordWeights.get(last_word, [])
@@ -564,4 +571,4 @@ class BayesCategorizer:
         import math
         if prop < 1.0e-17:
             return 0
-        return prop * math.log(prop)
+        return prop * math.log(prop, 2)
