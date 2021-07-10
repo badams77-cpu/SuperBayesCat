@@ -181,7 +181,7 @@ class BayesCategorizer:
                     score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
-                    is_new = word_document_count.get(word,0) == 0
+                    is_new = word_document_count.get(word1, 0) == 0
                     word_document_count[word1] = 1 + word_document_count.get(word1, 0)
                     if is_new:
                         cat_count[i][word1] = cat_count[i].get(word1, 0) + score
@@ -570,7 +570,8 @@ class BayesCategorizer:
                         last_weights = self.wordWeights[last_word]
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
-                        c = max(a, b)
+                        c = max(a, b)  # Use highest correlation
+                        c = 1  # Ignore correlation for pairs this has best score.
                         cat_num = 0
                         while cat_num < len(pair_weights):
                             rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
