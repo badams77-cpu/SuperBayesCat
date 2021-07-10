@@ -14,6 +14,9 @@ class BayesCategorizer:
         self.priorProb = []
         self.wordWeights = []
         self.pairWeights = dict()
+        self.pairWeightX = []
+        self.pairWeightY = []
+        self.pairWeightValues = [];
         self.informationGainedThresholdWords = 0.5
         self.informationGainedThresholdPairs = 0.01
         self.percentOfDocumentForStopListWords = 60
@@ -24,6 +27,11 @@ class BayesCategorizer:
 
     @staticmethod
     def encode(obj):
+        obj.pairWeightValues = []
+        for key in obj.wordPairs:
+            weights = obj.pairWeights[key]
+            obj.pairWeightValues.append(weights)
+
         if isinstance(obj, BayesCategorizer):
             return {"sbc": True,
                     "categoryNames": obj.categoryNames,
@@ -33,7 +41,7 @@ class BayesCategorizer:
                     "wordPairs": obj.wordPairs,
                     "priorProb": obj.priorProb,
                     "wordWeights": obj.wordWeights,
-                    "pairWeights": obj.pairWeights,
+                    "pairWeightsValues": obj.pairWeightsValues,
                     "correlation_error": obj.correlation_error}
 
     @staticmethod
@@ -47,8 +55,13 @@ class BayesCategorizer:
             sbc.wordPairs = obj['wordPairs']
             sbc.priorProb = obj['priorProb']
             sbc.wordWeights = obj['wordWeights']
-            if 'pairWeights' in obj:
-                sbc.pairWeights = obj['pairWeights']
+            sbc.pairWeights = dict()
+            sbc.pairWeightsValues = obj['pairWeightsValues']
+            i = 0
+            for key in obj.wordPairs:
+                pair = (key[0], key[1])
+                sbc.pairWeights(pair, sbc.pairWeightsValues[i])
+                i += 1
             sbc.correlation_error = obj['correlation_error']
             print("read "+str(len(sbc.wordWeights))+" word weights and "+str(len(sbc.pairWeights))+" pair weights")
             return sbc
