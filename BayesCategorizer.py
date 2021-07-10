@@ -283,8 +283,8 @@ class BayesCategorizer:
                         inner_cat_count_pairs += 1
                         doc_pair_count[word_pair] = doc_pair_count.get(word_pair ,0) + 1
                         inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0) + 1
-                n_total_pairs += inner_cat_total_pairs
-                n_cat_total_pairs[i] += inner_cat_count_pairs
+            n_total_pairs += inner_cat_total_pairs
+            n_cat_total_pairs[i] += inner_cat_count_pairs
             i += 1
         # Pair selection
         pairs_to_use = []
@@ -488,7 +488,7 @@ class BayesCategorizer:
             i = 0
             while i < len(cat_word_count):
                 ret[key][i] = weight * math.log((1.0 + word_freq[i].get(key, 0)) / (len(keys)+cat_word_count[i]))
-                print(str(key)+","+str(i)+","+str(j)+"= "+str(ret[key][j]))
+#                print(str(key)+","+str(i)+","+str(j)+"= "+str(ret[key][i]))
                 i += 1
             j += 1
         return ret
