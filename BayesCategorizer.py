@@ -16,9 +16,9 @@ class BayesCategorizer:
         self.pairWeights = dict()
         self.pairWeightX = []
         self.pairWeightY = []
-        self.pairWeightValues = [];
+        self.pairWeightValues = []
         self.informationGainedThresholdWords = 0.5
-        self.informationGainedThresholdPairs = 0.01
+        self.informationGainedThresholdPairs = 0.006
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
         self.weightBoostForPair = 2.0
@@ -179,10 +179,12 @@ class BayesCategorizer:
                     score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
+                    is_new = word_document_count.get(word,0) == 0
                     word_document_count[word1] = 1 + word_document_count.get(word1, 0)
-                    cat_count[i][word1] = cat_count[i].get(word1, 0) + score
-                    cat_total[i][word1] = cat_total[i].get(word1, 0) + score
-                    total_count[word1] = total_count.get(word1, 0) + score
+                    if is_new:
+                        cat_count[i][word1] = cat_count[i].get(word1, 0) + score
+                        cat_total[i][word1] = cat_total[i].get(word1, 0) + score
+                        total_count[word1] = total_count.get(word1, 0) + score
             i += 1
         words_to_use = []
         max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
@@ -377,7 +379,7 @@ class BayesCategorizer:
         aword = 1
         corr_err = []
         while aword < len(self.wordNumbers):
-            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword]+" "+ str(aword)+"<"+str(len(self.wordNumbers)))
+#            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword]+" "+ str(aword)+"<"+str(len(self.wordNumbers)))
             bword = 0
             occ_a = word_count_by_document[aword]
             loc_a = document_num_by_word[aword]
@@ -453,7 +455,7 @@ class BayesCategorizer:
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
                     bword += 1
                     continue
-                corr_err_inner[bword] = (1.0 - dotprod / math.sqrt(corr_sq * papb_sq)) # originally 1-dotprod / ()
+                corr_err_inner[bword] = (1 - dotprod / math.sqrt(corr_sq * papb_sq)) # originally 1-dotprod / ()
                 if self.words[aword] == 'natural' and dotprod != 0:
                    print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
                 bword += 1
@@ -534,7 +536,7 @@ class BayesCategorizer:
             iword += 1
         i = 0
         sb_factor = [0] * len(self.wordNumbers)
-        k = 0 # math.log(2.0)
+        k = math.log(2.0)
         while i < len(self.wordNumbers):
             x = correlation_factor[i]
             if x == 0:
