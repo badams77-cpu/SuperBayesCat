@@ -3,7 +3,7 @@
 class BayesCategorizer:
 
     # static data
-    stopList = {}
+    stopList = {'and', 'or', 'of', 'the', 'said', 'at', 'it', 'its', 'for', 'to', 'too', 'be'}
 
     def __init__(self):
         self.categoryNames = []
@@ -488,7 +488,7 @@ class BayesCategorizer:
             i = 0
             while i < len(cat_word_count):
                 ret[key][i] = weight * math.log((1.0 + word_freq[i].get(key, 0)) / (len(keys)+cat_word_count[i]))
-                #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
+                print(str(key)+","+str(i)+","+str(j)+"= "+str(ret[key][j]))
                 i += 1
             j += 1
         return ret
