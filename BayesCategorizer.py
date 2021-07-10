@@ -58,9 +58,9 @@ class BayesCategorizer:
             sbc.pairWeights = dict()
             sbc.pairWeightsValues = obj['pairWeightsValues']
             i = 0
-            for key in obj.wordPairs:
+            for key in sbc.wordPairs:
                 pair = (key[0], key[1])
-                sbc.pairWeights(pair, sbc.pairWeightsValues[i])
+                sbc.pairWeights[pair] = sbc.pairWeightsValues[i]
                 i += 1
             sbc.correlation_error = obj['correlation_error']
             print("read "+str(len(sbc.wordWeights))+" word weights and "+str(len(sbc.pairWeights))+" pair weights")
@@ -560,9 +560,9 @@ class BayesCategorizer:
                     pair = (word_number, last_word)
                     pair_weights = self.pairWeights.get(pair, [])
                     if len(pair_weights)>0:
-                        print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
-                        weights = self.wordWeights.get(word_num, [])
-                        last_weights = self.wordWeights.get(last_word, [])
+#                        print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
+                        weights = self.wordWeights[word_number]
+                        last_weights = self.wordWeights[last_word]
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
                         c = max(a, b)
