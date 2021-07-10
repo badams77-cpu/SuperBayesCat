@@ -570,7 +570,7 @@ class BayesCategorizer:
                         last_weights = self.wordWeights[last_word]
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
-                        c = min(a, b)
+                        c = max(a, b)
                         cat_num = 0
                         while cat_num < len(pair_weights):
                             rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
