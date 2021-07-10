@@ -534,7 +534,7 @@ class BayesCategorizer:
             iword += 1
         i = 0
         sb_factor = [0] * len(self.wordNumbers)
-        k = math.log(2.0)
+        k = 0 # math.log(2.0)
         while i < len(self.wordNumbers):
             x = correlation_factor[i]
             if x == 0:
