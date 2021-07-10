@@ -61,6 +61,8 @@ class BayesCategorizer:
             for key in sbc.wordPairs:
                 pair = (key[0], key[1])
                 sbc.pairWeights[pair] = sbc.pairWeightsValues[i]
+                if sbc.words[key[0]] == 'natural':
+                    print(str(pair )+", (natural"+sbc.words[key[1]]+") ="+str(sbc.pairWeightsValues[i]))
                 i += 1
             sbc.correlation_error = obj['correlation_error']
             print("read "+str(len(sbc.wordWeights))+" word weights and "+str(len(sbc.pairWeights))+" pair weights")
@@ -559,23 +561,24 @@ class BayesCategorizer:
 #                    print("natural "+str(sb_factor[word_number]))
                 done_pair = False;
                 if last_word != -1:
-                    pair = (word_number, last_word)
+                    pair = (last_word, word_number)
                     pair_weights = self.pairWeights.get(pair, [])
-                    if len(pair_weights)>0:
-#                        print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
+                    if len(pair_weights) > 0:
+                        if self.words[last_word] == 'natural':
+                            print("pair "+self.words[last_word]+","+self.words[word_number]+" found")
                         weights = self.wordWeights[word_number]
                         last_weights = self.wordWeights[last_word]
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
-                        c = max(a, b)
+                        c = min(a, b)
                         cat_num = 0
-                        while cat_num < len(rec_scores):
+                        while cat_num < len(pair_weights):
                             rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
                             cat_num += 1
                         done_pair = True
-                        last_word = -1
 #                    else:
 #                        print("pair ("+str(last_word)+","+str(word_number)+" "+self.words[last_word]+","+self.words[word_number]+") not found")
+                    last_word = -1
                 if not done_pair:
                     cat_num = 0
                     while cat_num < len(rec_scores):
