@@ -27,10 +27,10 @@ class BayesCategorizer:
 
     @staticmethod
     def encode(obj):
-        obj.pairWeightValues = []
+        obj.pairWeightsValues = []
         for key in obj.wordPairs:
             weights = obj.pairWeights[key]
-            obj.pairWeightValues.append(weights)
+            obj.pairWeightsValues.append(weights)
 
         if isinstance(obj, BayesCategorizer):
             return {"sbc": True,
