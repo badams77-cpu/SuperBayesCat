@@ -515,6 +515,7 @@ class BayesCategorizer:
                 number_of_words += 1
         correlation_factor = [0] * len(self.wordNumbers)
         iword = 1
+        super_baye_factor = math.log(2.0)
         while iword < number_of_words:
             jword = 0
             while jword < number_of_words:
@@ -538,13 +539,13 @@ class BayesCategorizer:
             iword += 1
         i = 0
         sb_factor = [0] * len(self.wordNumbers)
-        k = math.log(2.0)
+
         while i < len(self.wordNumbers):
             x = correlation_factor[i]
             if x == 0:
                 sb_factor[i] = 1
             else:
-                sb_factor[i] = math.exp(-k*x)
+                sb_factor[i] = math.exp(-super_baye_factor * x)
             i += 1
         last_word = -1
         for word in word_count.wordList:
@@ -556,7 +557,7 @@ class BayesCategorizer:
                 continue
             if word1 in self.wordNumbers:
                 word_number = self.wordNumbers[word1]
-                score = 1
+                score = self.weightBoostForPair
 #               if word1 == "natural":
 #                    print("natural "+str(sb_factor[word_number]))
                 done_pair = False;
@@ -574,12 +575,13 @@ class BayesCategorizer:
                         c = 1  # Ignore correlation for pairs this has best score.
                         cat_num = 0
                         while cat_num < len(pair_weights):
-                            rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
+                            rec_scores[cat_num] += score*c*pair_weights[cat_num] - b * last_weights[cat_num]
                             cat_num += 1
+                        last_word = -1
                         done_pair = True
-#                    else:
+                    else:
+                        last_word = word_number
 #                        print("pair ("+str(last_word)+","+str(word_number)+" "+self.words[last_word]+","+self.words[word_number]+") not found")
-                    last_word = -1
                 if not done_pair:
                     cat_num = 0
                     while cat_num < len(rec_scores):

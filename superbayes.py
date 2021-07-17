@@ -33,8 +33,10 @@ if __name__ == '__main__':
         categorizer = BayesCategorizer()
         categorizer.build_categorizer(myargs['-b'])
         if '-c' in myargs:
-            catout = open(myargs['-c'], 'wb')
+            file = myargs['-c']
+            catout = open(file, 'wb')
             packed = msgpack.packb(BayesCategorizer.encode(categorizer))
+            print("Writing categorizer "+file)
             catout.write(packed)
             catout.close()
         if '-t' in myargs:
@@ -43,8 +45,10 @@ if __name__ == '__main__':
         exit(0)
     if '-t' in myargs:
         if '-c' in myargs:
-            catin = open(myargs['-c'], 'rb')
+            file = myargs['-c']
+            catin = open(file, 'rb')
             unpack = catin.read();
+            print("Read categorizer "+file)
             categorizer = BayesCategorizer.decode(msgpack.unpackb(unpack))
             catin.close()
             accuracy = categorizer.test_categorizer(myargs['-t'])
