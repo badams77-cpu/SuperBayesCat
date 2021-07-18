@@ -17,8 +17,8 @@ class BayesCategorizer:
         self.pairWeightX = []
         self.pairWeightY = []
         self.pairWeightValues = []
-        self.informationGainedThresholdWords = 0.5
-        self.informationGainedThresholdPairs = 0.006
+        self.informationGainedThresholdWords = 0.52
+        self.informationGainedThresholdPairs = 0.0059
         self.percentOfDocumentForStopListWords = 60
         self.superBayesAmount = 1.0
         self.weightBoostForPair = 2.0
@@ -436,8 +436,8 @@ class BayesCategorizer:
                     if count < 1:
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
-                    if self.words[aword] == 'natural' and corr[j] != 0:
-                        print(self.words[bword] + " d_corr["+str(j)+"] = "+str(corr[j]))
+#                    if self.words[aword] == 'natural' and corr[j] != 0:
+#                        print(self.words[bword] + " d_corr["+str(j)+"] = "+str(corr[j]))
                     j += 1
                 dotprod = 0.0
                 papb_sq = 0.0
@@ -457,9 +457,9 @@ class BayesCategorizer:
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
                     bword += 1
                     continue
-                corr_err_inner[bword] = (1 - dotprod / math.sqrt(corr_sq * papb_sq)) # originally 1-dotprod / ()
-                if self.words[aword] == 'natural' and dotprod != 0:
-                   print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
+                corr_err_inner[bword] = (1 - dotprod / math.sqrt(corr_sq * papb_sq))
+#                if self.words[aword] == 'natural' and dotprod != 0:
+#                   print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
                 bword += 1
             corr_err.append(corr_err_inner)
             aword += 1
@@ -515,7 +515,7 @@ class BayesCategorizer:
                 number_of_words += 1
         correlation_factor = [0] * len(self.wordNumbers)
         iword = 1
-        super_baye_factor = math.log(2.0)
+        super_bayes_factor = math.log(2.0)
         while iword < number_of_words:
             jword = 0
             while jword < number_of_words:
@@ -545,7 +545,7 @@ class BayesCategorizer:
             if x == 0:
                 sb_factor[i] = 1
             else:
-                sb_factor[i] = math.exp(-super_baye_factor * x)
+                sb_factor[i] = math.exp(-super_bayes_factor * x)
             i += 1
         last_word = -1
         for word in word_count.wordList:
@@ -557,9 +557,6 @@ class BayesCategorizer:
                 continue
             if word1 in self.wordNumbers:
                 word_number = self.wordNumbers[word1]
-                score = self.weightBoostForPair
-#               if word1 == "natural":
-#                    print("natural "+str(sb_factor[word_number]))
                 done_pair = False;
                 if last_word != -1:
                     pair = (last_word, word_number)
@@ -571,11 +568,11 @@ class BayesCategorizer:
                         last_weights = self.wordWeights[last_word]
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
-                        c = max(a, b)  # Use highest correlation
-                        c = 1  # Ignore correlation for pairs this has best score.
+                        c = max(a, b)  # Use highest correlation # Ignore correlation for pairs this has best score.
+                        c = 3
                         cat_num = 0
                         while cat_num < len(pair_weights):
-                            rec_scores[cat_num] += score*c*pair_weights[cat_num] - b * last_weights[cat_num]
+                            rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
                             cat_num += 1
                         last_word = -1
                         done_pair = True
