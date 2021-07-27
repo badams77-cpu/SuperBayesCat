@@ -13,6 +13,7 @@ def getopts(argv):
 
 if __name__ == '__main__':
     from sys import argv
+    import msgpack
     from BayesCategorizer import BayesCategorizer
     myargs = getopts(argv)
     if '-h' in myargs:
@@ -31,7 +32,24 @@ if __name__ == '__main__':
         print("building")
         categorizer = BayesCategorizer()
         categorizer.build_categorizer(myargs['-b'])
+        if '-c' in myargs:
+            file = myargs['-c']
+            catout = open(file, 'wb')
+            packed = msgpack.packb(BayesCategorizer.encode(categorizer))
+            print("Writing categorizer "+file)
+            catout.write(packed)
+            catout.close()
         if '-t' in myargs:
             accuracy = categorizer.test_categorizer(myargs['-t'])
             print(" tested "+str(accuracy)+"% accurate")
         exit(0)
+    if '-t' in myargs:
+        if '-c' in myargs:
+            file = myargs['-c']
+            catin = open(file, 'rb')
+            unpack = catin.read();
+            print("Read categorizer "+file)
+            categorizer = BayesCategorizer.decode(msgpack.unpackb(unpack))
+            catin.close()
+            accuracy = categorizer.test_categorizer(myargs['-t'])
+            print(" tested "+str(accuracy)+"% accurate")
