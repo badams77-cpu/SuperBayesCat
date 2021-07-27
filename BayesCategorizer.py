@@ -372,6 +372,7 @@ class BayesCategorizer:
             while icat < len(self.categoryNames):
                 count = category_total_word_count[icat]
                 if count == 0:
+                    icat += 1
                     cat_prob.append(0)
                     continue
                 cat_prob.append(total_occur[icat][iword]/count)
@@ -416,16 +417,17 @@ class BayesCategorizer:
                         if self.words[aword] == 'natural' and self.words[bword] == 'oilfield':
                             print(" category for document pa="+str(pa), " ia="+str(ia)+" occ_a="+str((occ_a[ia]))+" ib="+str(ib)+ " occ_b="+str(occ_b[ib]))
                             print(" is "+str(category_for_document[pa])+" len loc_b="+str(lb)+" len lcc_a="+str(la)+" len occ_a="+str(len(occ_a))+" len occ_b="+str(len(occ_b)))
-                        corr[category_for_document[pa]] += occ_a[ia] * occ_b[ib]
+                        corr[category_for_document[pa]] += self.sign(occ_a[ia]) * self.sign(occ_b[ib])
                         ia += 1
                         ib += 1
+                        n_corr += 1
                         if ia >= la:
                             break
                         pa = loc_a[ia]
                         if ib >= lb:
                             break
                         pb = loc_b[ib]
-                        n_corr += 1
+
                 if n_corr == 0:
                     bword += 1
                     continue
@@ -434,6 +436,7 @@ class BayesCategorizer:
                 while j < ncats:
                     count = category_total_word_count[j]
                     if count < 1:
+                        j += 1
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
 #                    if self.words[aword] == 'natural' and corr[j] != 0:
@@ -496,6 +499,11 @@ class BayesCategorizer:
                 i += 1
             j += 1
         return ret
+
+    def sign(self, x):
+        if x>0:
+          return 1
+        return 0
 
     def recognition_scores(self, word_count):
         import math
