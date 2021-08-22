@@ -106,25 +106,23 @@ class BayesCategorizer:
             cat_num += 1
         n_documents = 0
         cat_index = 0
-        while cat_index < parsed_category_sources.number_of_cats():
+
+        for cat_index in range(0, parsed_category_sources.number_of_cats()):
             cat_name = cat_names[cat_index]
             for source in parsed_category_sources.get_sources(cat_name):
                 n_documents += 1
                 recognition_scores = self.recognition_scores(source)
                 best = -1
                 best_score = -1e30
-                rec_index = 0
-                while rec_index < len(recognition_scores):
+                for rec_index in range(0, len(recognition_scores)):
                     rec = recognition_scores[rec_index]
                     if rec > best_score:
                         best_score = rec
                         best = rec_index
-                    rec_index = rec_index + 1
                 best_cat_name = self.categoryNames[best]
                 print(str(n_documents) + " cat= " + cat_name + " best fit " + best_cat_name + " best="+str(best))
                 if best_cat_name == cat_name:
                     ok_sources = ok_sources + 1
-            cat_index = cat_index + 1
         print(str(ok_sources)+" out of "+str(n_documents))
         return (100.0 * ok_sources)/n_documents
 
@@ -157,13 +155,12 @@ class BayesCategorizer:
         document_count = 0
         word_document_count = dict();
         total_count = dict();
-        i = 0
         cat_count = []
         cat_total = []
         cat_word_count = []
         cat_document_count = []
         average_word_factor = 0.0
-        while i < len(self.categoryNames):
+        for i in range(0, len(self.categoryNames)):
             cat_count.append(dict())
             cat_total.append(dict())
             cat_document_count.append(0)
@@ -187,24 +184,20 @@ class BayesCategorizer:
                         cat_count[i][word1] = cat_count[i].get(word1, 0) + score
                         cat_total[i][word1] = cat_total[i].get(word1, 0) + score
                         total_count[word1] = total_count.get(word1, 0) + score
-            i += 1
         words_to_use = []
         max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
         for word in total_count.keys():
             if word_document_count.get(word, 0) < 2:
                 continue
             square_info_gained = 0.0
-            i = 0
-            while i < len(self.categoryNames):
+            for i in range(0, len(self.categoryNames)):
                 prob_word = word_document_count[word]/document_count
                 prob_cat = cat_document_count[i] / document_count
                 prob_cat_given_word = cat_count[i].get(word, 0) / cat_document_count[i]
                 information = prob_word * self.entropy(prob_cat_given_word) + (1.0 - prob_word) * self.entropy(1.0 - prob_cat_given_word) - self.entropy(prob_cat)
                 if information < 0:
-                    i += 1
                     continue
                 square_info_gained += information*information
-                i += 1
 #                print("Word: "+word+" info "+str(square_info_gained)+" prop="+str(prob_word)+" prob_cat_given_word="+str(prob_cat_given_word))
             if square_info_gained > self.informationGainedThresholdWords * self.informationGainedThresholdWords:
 #                print("Use word: "+word)
@@ -218,17 +211,14 @@ class BayesCategorizer:
         for word in words_to_use:
             self.wordNumbers[word] = i
             i += 1
-        i = 0
         self.priorProb = []
-        while i < len(self.categoryNames):
+        for i in range(0, len(self.categoryNames)):
             category_name = self.categoryNames[i]
             prob_cat = cat_document_count[i]/document_count
             self.priorProb.append(math.log(prob_cat))
-            i += 1
         self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
         self.makePairs(sources)
         self.makeSuperBayes(sources)
-
 
         return document_count
 
@@ -244,14 +234,11 @@ class BayesCategorizer:
         cat_pair_total = []
         cat_docs = []
         n_doc_total = 0
-        i = 0
-        while i < n_cats:
+        for i in range(0, n_cats):
             cat_pair_count.append(dict())
             cat_pair_total.append(dict())
-            i += 1
             cat_docs.append(0)
-        i = 0
-        while i < n_cats:
+        for i in range(0, n_cats):
             category_name = self.categoryNames[i]
             inner_cat_pair_count = cat_pair_count[i]
             inner_cat_pair_total = cat_pair_total[i]
@@ -289,24 +276,20 @@ class BayesCategorizer:
                         inner_cat_pair_count[word_pair] = inner_cat_pair_count.get(word_pair, 0) + 1
             n_total_pairs += inner_cat_total_pairs
             n_cat_total_pairs[i] += inner_cat_count_pairs
-            i += 1
         # Pair selection
         pairs_to_use = []
         igtp2 = self.informationGainedThresholdPairs * self.informationGainedThresholdPairs
         for pair in tot_pair_count.keys():
             info_gained2 = 0
             pair_doc_count = doc_pair_count.get(pair, 0)
-            i = 0
-            while i < n_cats:
+            for i in range(0, n_cats):
                 prob_cat = cat_docs[i] / n_doc_total
                 prob_pair = doc_pair_count.get(pair, 0)/ n_doc_total
                 prob_cat_given_pair = cat_pair_count[i].get(pair, 0) / cat_docs[i]
                 info = prob_pair * self.entropy(prob_cat_given_pair) + (1.0 - prob_pair) * self.entropy(1.0 - prob_cat_given_pair) - self.entropy(prob_cat)
                 if info < 0:
-                    i += 1
                     continue
                 info_gained2 += info*info
-                i += 1
             if info_gained2 > igtp2:
                 pairs_to_use.append(pair)
 
@@ -323,19 +306,15 @@ class BayesCategorizer:
         category_total_word_count = []
         word_count_by_document = []
         category_for_document = []
-        iword = 0
-        while iword < len(self.wordNumbers):
+        for iword in range(0, len(self.wordNumbers)):
             word_occur.append([])
             document_num_by_word.append([])
             word_count_by_document.append([])
-            iword += 1
         n_document = 0
-        category_number = 0
-        while category_number < len(self.categoryNames):
+        for category_number in range(0, len(self.categoryNames)):
             total_occur.append([0] * len(self.wordNumbers))
             cat_total = 0
             category_name = self.categoryNames[category_number]
-
             for source in sources.get_sources(category_name):
                 for word in source.keys():
                     word1 = word.lower()
@@ -359,14 +338,11 @@ class BayesCategorizer:
                 category_for_document.append(category_number)
                 n_document += 1
             category_total_word_count.append(cat_total)
-
-            category_number += 1
             if cat_total == 0:
                 print("Warning category: "+category_name+" has no documents")
         prob_words = []
-        iword = 0
         ncats = len(self.categoryNames)
-        while iword < len(self.wordNumbers):
+        for iword in range(0, len(self.wordNumbers)):
             cat_prob = []
             icat = 0
             while icat < len(self.categoryNames):
@@ -378,17 +354,14 @@ class BayesCategorizer:
                 cat_prob.append(total_occur[icat][iword]/count)
                 icat += 1
             prob_words.append(cat_prob)
-            iword += 1
-        aword = 1
         corr_err = []
-        while aword < len(self.wordNumbers):
+        for aword in range(1, len(self.wordNumbers)):
 #            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCorrelations for word "+self.words[aword]+" "+ str(aword)+"<"+str(len(self.wordNumbers)))
-            bword = 0
             occ_a = word_count_by_document[aword]
             loc_a = document_num_by_word[aword]
             la = len(loc_a)
             corr_err_inner = [0] * aword
-            while bword < aword:
+            for bword in range(0, aword):
                 occ_b = word_count_by_document[bword]
                 loc_b = document_num_by_word[bword]
                 pa = loc_a[0]
@@ -427,26 +400,20 @@ class BayesCategorizer:
                         if ib >= lb:
                             break
                         pb = loc_b[ib]
-
                 if n_corr == 0:
-                    bword += 1
                     continue
                 d_corr = [0] * ncats
-                j = 0
-                while j < ncats:
+                for j in range(0, ncats):
                     count = category_total_word_count[j]
                     if count < 1:
-                        j += 1
                         continue
                     d_corr[j] = corr[j] / (count - 1.0)
 #                    if self.words[aword] == 'natural' and corr[j] != 0:
 #                        print(self.words[bword] + " d_corr["+str(j)+"] = "+str(corr[j]))
-                    j += 1
                 dotprod = 0.0
                 papb_sq = 0.0
                 corr_sq = 0.0
-                j = 0
-                while j < ncats:
+                for j in range(0, ncats):
 #                    if len(prob_words[aword]) <= j:
 #                        print(" error aword "+str(aword)+" cat len "+str(len(prob_words[aword])));
                     pcata = prob_words[aword][j]
@@ -456,16 +423,13 @@ class BayesCategorizer:
                     dotprod += p2 * corr1
                     corr_sq += corr1 * corr1
                     papb_sq += p2 * p2
-                    j += 1
                 if (papb_sq < 1.0e-20) or (corr_sq < 1.0e-20):
                     bword += 1
                     continue
                 corr_err_inner[bword] = (1 - dotprod / math.sqrt(corr_sq * papb_sq))
 #                if self.words[aword] == 'natural' and dotprod != 0:
 #                   print("corr_err_inner: "+self.words[bword]+" = " + str(corr_err_inner[bword])+" dotprod "+str(dotprod)+", corr_sq="+str(corr_sq)+", papb_sq="+str(papb_sq))
-                bword += 1
             corr_err.append(corr_err_inner)
-            aword += 1
         self.correlation_error = corr_err
         print("")
 
@@ -473,31 +437,23 @@ class BayesCategorizer:
     def laplace_estimator(self, word_freq, cat_word_count, keys, weight):
         import math
         ret = []
-        i = 0
-        while i < len(keys):
+        for i in range(0, len(keys)):
             ret.append([])
-            j = 0
             key = keys[i]
-            while j < len(cat_word_count):
+            for j in range(0, len(cat_word_count)):
                 ret[i].append(weight * math.log((1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
 #                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
-                j += 1
-            i += 1
         return ret
 
     def laplace_estimator_pairs(self, word_freq, cat_word_count, keys, weight):
         import math
         ret = dict()
-        j = 0
-        while j < len(keys):
+        for j in range(0, len(keys)):
             key = keys[j]
             ret[key] = [0] * len(cat_word_count)
-            i = 0
-            while i < len(cat_word_count):
+            for i in range(0, len(cat_word_count)):
                 ret[key][i] = weight * math.log((1.0 + word_freq[i].get(key, 0)) / (len(keys)+cat_word_count[i]))
 #                print(str(key)+","+str(i)+","+str(j)+"= "+str(ret[key][i]))
-                i += 1
-            j += 1
         return ret
 
     def sign(self, x):
@@ -508,10 +464,8 @@ class BayesCategorizer:
     def recognition_scores(self, word_count):
         import math
         rec_scores = []
-        i = 0
-        while i < len(self.priorProb):
+        for i in range(0, len(self.priorProb)):
             rec_scores.append(self.priorProb[i])
-            i += 1
         word_num = []
         number_of_words = 0
         for word in word_count.keys():
@@ -522,11 +476,9 @@ class BayesCategorizer:
                 word_num.append(self.wordNumbers[word1])
                 number_of_words += 1
         correlation_factor = [0] * len(self.wordNumbers)
-        iword = 1
         super_bayes_factor = math.log(2.0)
-        while iword < number_of_words:
-            jword = 0
-            while jword < number_of_words:
+        for iword in range(1, number_of_words):
+            for jword in range(0, number_of_words):
                 word_a = word_num[iword]
                 word_b = word_num[jword]
                 x = 0
@@ -543,18 +495,15 @@ class BayesCategorizer:
                 if correlation_factor[word_b] < x:
 #                    print(self.words[word_b]+" "+str(x))
                     correlation_factor[word_b] = x
-                jword += 1
-            iword += 1
-        i = 0
-        sb_factor = [0] * len(self.wordNumbers)
 
-        while i < len(self.wordNumbers):
+
+        sb_factor = [0] * len(self.wordNumbers)
+        for i in range(0, len(self.wordNumbers)):
             x = correlation_factor[i]
             if x == 0:
                 sb_factor[i] = 1
             else:
                 sb_factor[i] = math.exp(-super_bayes_factor * x)
-            i += 1
         last_word = -1
         for word in word_count.wordList:
             word1 = word.lower()
@@ -578,36 +527,30 @@ class BayesCategorizer:
                         b = sb_factor[last_word]
                         c = max(a, b)  # Use highest correlation # Ignore correlation for pairs this has best score.
                         c = 3
-                        cat_num = 0
-                        while cat_num < len(pair_weights):
+                        for cat_num in range(0, len(pair_weights)):
                             rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
-                            cat_num += 1
                         last_word = -1
                         done_pair = True
                     else:
                         last_word = word_number
 #                        print("pair ("+str(last_word)+","+str(word_number)+" "+self.words[last_word]+","+self.words[word_number]+") not found")
                 if not done_pair:
-                    cat_num = 0
-                    while cat_num < len(rec_scores):
+                    for cat_num in range(0, len(rec_scores)):
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]) +" word_number="+str(word_number))
                         rec_scores[cat_num] += sb_factor[word_number] * self.wordWeights[word_number][cat_num]
 #                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
-                        cat_num += 1
                     last_word = word_number
         return rec_scores
 
     def find_category_of(self, word_count):
         best = -1
         best_score = -1e30
-        rec_index = 0
         recognition_scores = self.recognition_scores(word_count)
-        while rec_index < len(recognition_scores):
+        for rec_index in range(0, len(recognition_scores)):
             rec = recognition_scores[rec_index]
             if rec > best_score:
                 best_score = rec
                 best = rec_index
-            rec_index += 1
         best_cat_name = self.categoryNames[best]
         return best_cat_name
 
