@@ -7,6 +7,8 @@ class BayesCategorizer:
 
     def __init__(self):
         self.categoryNames = []
+        self.alpha = 0.5
+        self.alpha_pair = 0.75
         self.categoryNumbers = dict()
         self.words = []
         self.wordNumbers = dict()
@@ -173,16 +175,16 @@ class BayesCategorizer:
                     word1 = word.lower()
                     if word.upper() == word1:
                         continue
-                    if word in self.stopList:
+                    if word1 in self.stopList:
                         continue
                     score = source.score(word1)
 #                    print("word: "+word+", score="+str(score))
                     cat_word_count[i] += score
                     is_new = word_document_count.get(word1, 0) == 0
                     word_document_count[word1] = 1 + word_document_count.get(word1, 0)
+                    cat_total[i][word1] = cat_total[i].get(word1, 0) + score
                     if is_new:
                         cat_count[i][word1] = cat_count[i].get(word1, 0) + score
-                        cat_total[i][word1] = cat_total[i].get(word1, 0) + score
                         total_count[word1] = total_count.get(word1, 0) + score
         words_to_use = []
         max_doc_count = (self.percentOfDocumentForStopListWords * document_count)/100.0
@@ -215,7 +217,9 @@ class BayesCategorizer:
         for i in range(0, len(self.categoryNames)):
             category_name = self.categoryNames[i]
             prob_cat = cat_document_count[i]/document_count
+#            print("cat: "+str(i)+" : "+str(cat_document_count[i])+"/ "+str(document_count))
             self.priorProb.append(math.log(prob_cat))
+#            print("cat: "+str(i)+" prior prob : "+str(self.priorProb[i]))
         self.wordWeights = self.laplace_estimator(cat_total, cat_word_count, words_to_use, 1.0)
         self.makePairs(sources)
         self.makeSuperBayes(sources)
@@ -441,8 +445,8 @@ class BayesCategorizer:
             ret.append([])
             key = keys[i]
             for j in range(0, len(cat_word_count)):
-                ret[i].append(weight * math.log((1.0 + word_freq[j].get(key, 0)) / (len(keys)+cat_word_count[j]) ))
-#                print(key+","+str(i)+","+str(j)+"= "+str(ret[i][j]))
+                ret[i].append(weight * math.log((self.alpha + word_freq[j].get(key, 0)) / (self.alpha * len(keys) + cat_word_count[j])))
+ #               print(key+","+str(word_freq[j].get(key, 0))+" "+str(i)+","+str(j)+"= "+str(ret[i][j]))
         return ret
 
     def laplace_estimator_pairs(self, word_freq, cat_word_count, keys, weight):
@@ -452,7 +456,7 @@ class BayesCategorizer:
             key = keys[j]
             ret[key] = [0] * len(cat_word_count)
             for i in range(0, len(cat_word_count)):
-                ret[key][i] = weight * math.log((1.0 + word_freq[i].get(key, 0)) / (len(keys)+cat_word_count[i]))
+                ret[key][i] = weight * math.log((self.alpha_pair + word_freq[i].get(key, 0)) / (self.alpha_pair * len(keys) + cat_word_count[i]))
 #                print(str(key)+","+str(i)+","+str(j)+"= "+str(ret[key][i]))
         return ret
 
@@ -495,8 +499,6 @@ class BayesCategorizer:
                 if correlation_factor[word_b] < x:
 #                    print(self.words[word_b]+" "+str(x))
                     correlation_factor[word_b] = x
-
-
         sb_factor = [0] * len(self.wordNumbers)
         for i in range(0, len(self.wordNumbers)):
             x = correlation_factor[i]
@@ -513,8 +515,11 @@ class BayesCategorizer:
             if word1 == word.upper():
                 continue
             if word1 in self.wordNumbers:
-                word_number = self.wordNumbers[word1]
-                done_pair = False;
+                word_number = self.wordNumbers.get(word1, -1)
+                if word_number == -1:
+                    last_word = -1
+                    continue
+                done_pair = False
                 if last_word != -1:
                     pair = (last_word, word_number)
                     pair_weights = self.pairWeights.get(pair, [])
@@ -525,10 +530,11 @@ class BayesCategorizer:
                         last_weights = self.wordWeights[last_word]
                         a = sb_factor[word_number]
                         b = sb_factor[last_word]
+                        b = 1
                         c = max(a, b)  # Use highest correlation # Ignore correlation for pairs this has best score.
-                        c = 3
                         for cat_num in range(0, len(pair_weights)):
                             rec_scores[cat_num] += c*pair_weights[cat_num] - b * last_weights[cat_num]
+#                        print("pair ("+str(last_word)+","+str(word_number)+" "+self.words[last_word]+","+self.words[word_number]+")  found")
                         last_word = -1
                         done_pair = True
                     else:
@@ -536,9 +542,10 @@ class BayesCategorizer:
 #                        print("pair ("+str(last_word)+","+str(word_number)+" "+self.words[last_word]+","+self.words[word_number]+") not found")
                 if not done_pair:
                     for cat_num in range(0, len(rec_scores)):
-#                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]) +" word_number="+str(word_number))
-                        rec_scores[cat_num] += sb_factor[word_number] * self.wordWeights[word_number][cat_num]
-#                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
+#                        print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]) +" word_number="+str(word_number)+" last word "+str(last_word))
+#                        rec_scores[cat_num] += sb_factor[word_number] * self.wordWeights[word_number][cat_num]
+                        rec_scores[cat_num] += self.wordWeights[word_number][cat_num]
+#                       print("cat_num: "+str(cat_num) + ", score="+str(rec_scores[cat_num]))
                     last_word = word_number
         return rec_scores
 
